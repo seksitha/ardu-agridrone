@@ -742,6 +742,7 @@ void ModeAuto::takeoff_run()
 void ModeAuto::wp_run()
 {
     // process pilot's yaw input
+    // gcs().send_text(MAV_SEVERITY_INFO, "sitha: =>flags 2 %i", mission.get_current_nav_index());
     float target_yaw_rate = 0;
     if (!copter.failsafe.radio) {
         // get pilot's desired yaw rate

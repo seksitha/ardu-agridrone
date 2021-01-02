@@ -1,0 +1,23 @@
+{
+  "name": "ardupilot",
+  "version": "1.0.0",
+  "description": "[![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/ArduPilot/ardupilot?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "start": "cd Tools/vagrant && vagrant up && vagrant ssh -c 'sim_vehicle.py -v ArduCopter -j 2 --custom-location=13.362628,103.910084,0,0'"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ArduPilot/ardupilot.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ArduPilot/ardupilot/issues"
+  },
+  "homepage": "https://github.com/ArduPilot/ardupilot#readme"
+}

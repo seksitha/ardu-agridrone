@@ -1,3 +1,4 @@
+#include "../ArduCopter/Copter.h"
 #include <AP_HAL/AP_HAL.h>
 #include "AC_WPNav.h"
 
@@ -226,11 +227,18 @@ bool AC_WPNav::set_wp_destination_NED(const Vector3f& destination_NED)
 bool AC_WPNav::set_wp_origin_and_destination(const Vector3f& origin, const Vector3f& destination, bool terrain_alt)
 {
     // store origin and destination locations
+    const Vector3f &curr_pos = _inav.get_position();
     _origin = origin;
+    // TODO: if we use waypoint instead of survey we need to elimate this
     _destination = destination;
+    _new_altitude_from_pilot = !is_zero(_pilot_clime_cm) ? curr_pos.z : _destination.z;
+    _destination.z = _new_altitude_from_pilot ;
+    _pilot_clime_cm = 0.0f;
     _terrain_alt = terrain_alt;
-    Vector3f pos_delta = _destination - _origin;
-
+    
+    // _destination.z += 200;
+    Vector3f pos_delta = _destination - _origin; // minus x, y, z seperately
+    // .length{ return norm(x,y,x)}
     _track_length = pos_delta.length(); // get track length
     _track_length_xy = safe_sqrt(sq(pos_delta.x)+sq(pos_delta.y));  // get horizontal track length (used to decide if we should update yaw)
 
@@ -241,6 +249,7 @@ bool AC_WPNav::set_wp_origin_and_destination(const Vector3f& origin, const Vecto
         _pos_delta_unit.y = 0;
         _pos_delta_unit.z = 0;
     }else{
+        // pos_delta.x/track_length, pos_delta.y/track_length, pos_delta.z/track_length
         _pos_delta_unit = pos_delta/_track_length;
     }
 
@@ -322,37 +331,50 @@ bool AC_WPNav::advance_wp_target_along_track(float dt)
     float track_leash_slack;    // additional distance (in cm) along the track from our track_covered position that our leash will allow
     bool reached_leash_limit = false;   // true when track has reached leash limit and we need to slow down the target point
 
-    // get current location
+    // 1. get current location
     const Vector3f &curr_pos = _inav.get_position();
 
-    // calculate terrain adjustments
+    // 2. calculate terrain adjustments
     float terr_offset = 0.0f;
     if (_terrain_alt && !get_terrain_offset(terr_offset)) {
         return false;
     }
-
-    // calculate 3d vector from segment's origin
+    int32_t throttle_val = copter.channel_throttle->get_radio_in();
+    // positive throttle
+    if (throttle_val > 1550 && _flags_change_alt_by_pilot){
+        _pilot_clime_cm < 1000 ? _pilot_clime_cm = (_pilot_clime_cm + 0.5) : _pilot_clime_cm;
+    }
+    // negative throttle
+    if (throttle_val > 1020 && throttle_val < 1450 && _flags_change_alt_by_pilot ){
+        _pilot_clime_cm >= -(curr_pos.z * 0.3) ? _pilot_clime_cm = (_pilot_clime_cm - 0.5) : _pilot_clime_cm;
+    }
+    // mid stick is no the start if we set like this, it is going to be 0 alt
+    // gcs().send_text(MAV_SEVERITY_INFO, "sitha: =>flags 2 %f",  _pilot_clime_cm);
+    if (throttle_val > 1480 && throttle_val < 1520 ){
+    
+    }   
+    // 3.calculate 3d vector from segment's origin
     Vector3f curr_delta = (curr_pos - Vector3f(0,0,terr_offset)) - _origin;
-
-    // calculate how far along the track we are
+    if (_flags_change_alt_by_pilot){
+        curr_delta.z -= _pilot_clime_cm;
+        // gcs().send_text(MAV_SEVERITY_INFO, "sitha: =>hit %f", _pos_delta_unit.z);
+    }
+    
+    // 4.calculate how far along the track we are
     track_covered = curr_delta.x * _pos_delta_unit.x + curr_delta.y * _pos_delta_unit.y + curr_delta.z * _pos_delta_unit.z;
-
-    // calculate the point closest to the vehicle on the segment from origin to destination
+    // 5.calculate the point closest to the vehicle on the segment from origin to destination
     Vector3f track_covered_pos = _pos_delta_unit * track_covered;
-
-    // calculate the distance vector from the vehicle to the closest point on the segment from origin to destination
+    // 6.calculate the distance vector from the vehicle to the closest point on the segment from origin to destination
+    // curr_delta is length has travel
     track_error = curr_delta - track_covered_pos;
-
-    // calculate the horizontal error
+    // 7.calculate the horizontal error
     _track_error_xy = norm(track_error.x, track_error.y);
-
-    // calculate the vertical error
+    // 8. calculate the vertical error
     float track_error_z = fabsf(track_error.z);
-
-    // get up leash if we are moving up, down leash if we are moving down
+    // 9. get up leash if we are moving up, down leash if we are moving down
+    // leash_up / down return distan cm of the vehicle
     float leash_z = track_error.z >= 0 ? _pos_control.get_leash_up_z() : _pos_control.get_leash_down_z();
-
-    // use pythagoras's theorem calculate how far along the track we could move the intermediate target before reaching the end of the leash
+    // 10. use pythagoras's theorem calculate how far along the track we could move the intermediate target before reaching the end of the leash
     //   track_desired_max is the distance from the vehicle to our target point along the track.  It is the "hypotenuse" which we want to be no longer than our leash (aka _track_leash_length)
     //   track_error is the line from the vehicle to the closest point on the track.  It is the "opposite" side
     //   track_leash_slack is the line from the closest point on the track to the target point.  It is the "adjacent" side.  We adjust this so the track_desired_max is no longer than the leash
@@ -360,25 +382,31 @@ bool AC_WPNav::advance_wp_target_along_track(float dt)
     float track_error_max_abs = MAX(_track_leash_length*track_error_z/leash_z, _track_leash_length*_track_error_xy/_pos_control.get_leash_xy());
     track_leash_slack = (track_leash_length_abs > track_error_max_abs) ? safe_sqrt(sq(_track_leash_length) - sq(track_error_max_abs)) : 0;
     track_desired_max = track_covered + track_leash_slack;
-
-    // check if target is already beyond the leash
+    
+    // 11.check if target is already beyond the leash
     if (_track_desired > track_desired_max) {
         reached_leash_limit = true;
     }
 
-    // get current velocity
+    // float pos_delta_unit_xy = norm(_pos_delta_unit.x, _pos_delta_unit.y);
+    // // gcs().send_text(MAV_SEVERITY_INFO, "sitha: => track_error_z %f", pos_delta_unit_xy);
+    // if(is_zero(pos_delta_unit_xy)){
+    //     _pos_delta_unit.z = 0.00;
+    // }
+
+    // 12.get current velocity
     const Vector3f &curr_vel = _inav.get_velocity();
     // get speed along track
     float speed_along_track = curr_vel.x * _pos_delta_unit.x + curr_vel.y * _pos_delta_unit.y + curr_vel.z * _pos_delta_unit.z;
 
-    // calculate point at which velocity switches from linear to sqrt
+    // 13.calculate point at which velocity switches from linear to sqrt
     float linear_velocity = _pos_control.get_max_speed_xy();
     float kP = _pos_control.get_pos_xy_p().kP();
     if (is_positive(kP)) {   // avoid divide by zero
         linear_velocity = _track_accel/kP;
     }
 
-    // let the limited_speed_xy_cms be some range above or below current velocity along track
+    // 14.let the limited_speed_xy_cms be some range above or below current velocity along track
     if (speed_along_track < -linear_velocity) {
         // we are traveling fast in the opposite direction of travel to the waypoint so do not move the intermediate point
         _limited_speed_xy_cms = 0;
@@ -407,7 +435,7 @@ bool AC_WPNav::advance_wp_target_along_track(float dt)
             _limited_speed_xy_cms = constrain_float(_limited_speed_xy_cms,speed_along_track-linear_velocity,speed_along_track+linear_velocity);
         }
     }
-    // advance the current target
+    // 15.advance the current target
     if (!reached_leash_limit) {
     	_track_desired += _limited_speed_xy_cms * dt;
 
@@ -421,36 +449,54 @@ bool AC_WPNav::advance_wp_target_along_track(float dt)
     	}
     }
 
-    // do not let desired point go past the end of the track unless it's a fast waypoint
-    if (!_flags.fast_waypoint) {
-        _track_desired = constrain_float(_track_desired, 0, _track_length);
-    } else {
+    // 16.do not let desired point go past the end of the track unless it's a fast waypoint
+    if (_flags.fast_waypoint) {
         _track_desired = constrain_float(_track_desired, 0, _track_length + WPNAV_WP_FAST_OVERSHOOT_MAX);
+    } else {
+        _track_desired = constrain_float(_track_desired, 0, _track_length);
     }
 
-    // recalculate the desired position
-    Vector3f final_target = _origin + _pos_delta_unit * _track_desired;
+    // 17.recalculate the desired position
+    // _pos_delta_unit is a fix percentage per wp (how is this defined)
+
+    // sitha: origin is the pos start takeoff 0.587cm, reach tf high 400cm, reach wp2 500cm, reach wp3 700cm
+    // sitha: take off 4m if I set the _origin.z = 500 then the take off is 9m 
+    // _origin.z=200;
+
+    Vector3f final_target = _origin + _pos_delta_unit * _track_desired; // only calculate xy
     // convert final_target.z to altitude above the ekf origin
     final_target.z += terr_offset;
+    if (_flags_change_alt_by_pilot){
+        final_target.z += _pilot_clime_cm;
+    }
     _pos_control.set_pos_target(final_target);
 
-    // check if we've reached the waypoint
+    // int32_t throttle_val = copter.channel_throttle->get_radio_in();
+    // if (throttle_val > 1020 && throttle_val < 2000){
+    //     _pos_control.set_alt_target_from_climb_rate(500, dt, false);
+    // }
+    // 18.check if we've reached the waypoint
     if( !_flags.reached_destination ) {
         if( _track_desired >= _track_length ) {
             // "fast" waypoints are complete once the intermediate point reaches the destination
             if (_flags.fast_waypoint) {
                 _flags.reached_destination = true;
+                _flags_change_alt_by_pilot = true;
             }else{
                 // regular waypoints also require the copter to be within the waypoint radius
                 Vector3f dist_to_dest = (curr_pos - Vector3f(0,0,terr_offset)) - _destination;
+                if (_flags_change_alt_by_pilot){
+                    dist_to_dest.z -= _pilot_clime_cm;
+                }
                 if( dist_to_dest.length() <= _wp_radius_cm ) {
                     _flags.reached_destination = true;
+                    _flags_change_alt_by_pilot = true;
                 }
             }
         }
     }
-
-    // update the target yaw if origin and destination are at least 2m apart horizontally
+    // gcs().send_text(MAV_SEVERITY_INFO, "sitha: => leash4 %i", _flags.reached_destination);
+    // 19.update the target yaw if origin and destination are at least 2m apart horizontally
     if (_track_length_xy >= WPNAV_YAW_DIST_MIN) {
         if (_pos_control.get_leash_xy() < WPNAV_YAW_DIST_MIN) {
             // if the leash is short (i.e. moving slowly) and destination is at least 2m horizontally, point along the segment from origin to destination
@@ -464,7 +510,7 @@ bool AC_WPNav::advance_wp_target_along_track(float dt)
         }
     }
 
-    // successfully advanced along track
+    // 20.successfully advanced along track
     return true;
 }
 
@@ -514,6 +560,7 @@ bool AC_WPNav::update_wpnav()
     check_wp_leash_length();
 
     _wp_last_update = AP_HAL::millis();
+    
 
     return ret;
 }
@@ -665,7 +712,7 @@ bool AC_WPNav::set_spline_origin_and_destination(const Vector3f& origin, const V
 {
     // mission is "active" if wpnav has been called recently and vehicle reached the previous waypoint
     bool prev_segment_exists = (_flags.reached_destination && ((AP_HAL::millis() - _wp_last_update) < 1000));
-
+    gcs().send_text(MAV_SEVERITY_INFO, "sitha: =>flags 2 %i",  _flags.fast_waypoint);
     // get dt from pos controller
     float dt = _pos_control.get_dt();
 

@@ -1,5 +1,5 @@
 #pragma once
-// auto generated bindings, don't manually edit
+// auto generated bindings, don't manually edit.  See README.md for details.
 #include <SRV_Channel/SRV_Channel.h>
 #include <AP_SerialLED/AP_SerialLED.h>
 #include <AP_Vehicle/AP_Vehicle.h>
@@ -14,12 +14,11 @@
 #include <AP_Arming/AP_Arming.h>
 #include <AP_AHRS/AP_AHRS.h>
 #include <AP_Common/Location.h>
-#include "lua/src/lua.hpp"
+#include <AP_Scripting/lua/src/lua.hpp>
 #include <new>
 
 #if !defined(AP_TERRAIN_AVAILABLE) || (AP_TERRAIN_AVAILABLE != 1)
   #error Scripting requires terrain to be available
-
 #endif // !defined(AP_TERRAIN_AVAILABLE) || (AP_TERRAIN_AVAILABLE != 1)
 
 

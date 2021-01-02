@@ -304,7 +304,11 @@ protected:
     float       _track_speed;           // speed in cm/s along track
     float       _track_leash_length;    // leash length along track
     float       _slow_down_dist;        // vehicle should begin to slow down once it is within this distance from the destination
-
+    bool        _flags_change_alt_by_pilot = false;
+    float       _pilot_clime_cm = 0.00f;
+    float       _new_altitude_from_pilot = 0.00f;
+    bool        _flags_mid_stick = false;
+    
     // spline variables
     float       _spline_time;           // current spline time between origin and destination
     float       _spline_time_scale;     // current spline time between origin and destination
