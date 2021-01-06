@@ -1,5 +1,8 @@
 #pragma once
-// auto generated bindings, don't manually edit.  See README.md for details.
+// auto generated bindings, don't manually edit
+#include <AC_WPNav/AC_WPNav.h>
+#include <AP_Mission/AP_Mission.h>
+#include <RC_Channel/RC_Channel.h>
 #include <SRV_Channel/SRV_Channel.h>
 #include <AP_SerialLED/AP_SerialLED.h>
 #include <AP_Vehicle/AP_Vehicle.h>
@@ -14,14 +17,17 @@
 #include <AP_Arming/AP_Arming.h>
 #include <AP_AHRS/AP_AHRS.h>
 #include <AP_Common/Location.h>
-#include <AP_Scripting/lua/src/lua.hpp>
+#include "lua/src/lua.hpp"
 #include <new>
 
 #if !defined(AP_TERRAIN_AVAILABLE) || (AP_TERRAIN_AVAILABLE != 1)
   #error Scripting requires terrain to be available
+
 #endif // !defined(AP_TERRAIN_AVAILABLE) || (AP_TERRAIN_AVAILABLE != 1)
 
 
+int new_mavlink_mission_item_int_t(lua_State *L);
+mavlink_mission_item_int_t * check_mavlink_mission_item_int_t(lua_State *L, int arg);
 int new_Vector2f(lua_State *L);
 Vector2f * check_Vector2f(lua_State *L, int arg);
 int new_Vector3f(lua_State *L);

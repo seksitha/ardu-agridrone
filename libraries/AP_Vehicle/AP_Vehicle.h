@@ -54,6 +54,7 @@ public:
 
     bool virtual set_mode(const uint8_t new_mode, const ModeReason reason) = 0;
     uint8_t virtual get_mode() const = 0;
+    void virtual set_yaw(float angle_deg, float turn_rate_dps, int8_t direction, bool relative_angle) const = 0;
     /*
       common parameters for fixed wing aircraft
      */

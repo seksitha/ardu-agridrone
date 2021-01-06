@@ -810,7 +810,9 @@ private:
     uint8_t get_mode() const override { return (uint8_t)control_mode; }
     void update_flight_mode();
     void notify_flight_mode();
-
+    void set_yaw(float angle_deg, float turn_rate_dps, int8_t direction,bool relative_angle) const override{
+        Mode::auto_yaw.set_fixed_yaw(angle_deg, turn_rate_dps, direction,relative_angle);
+    }
     // mode_land.cpp
     void set_mode_land_with_pause(ModeReason reason);
     bool landing_with_GPS();

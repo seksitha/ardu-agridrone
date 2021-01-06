@@ -637,7 +637,7 @@ void handle_operator(struct userdata *data) {
     error(ERROR_USERDATA, "Needed a symbol for the operator");
   }
 
-  enum operator_type operation;
+  enum operator_type operation = OP_ADD;
   if (strcmp(operator, "+") == 0) {
     operation = OP_ADD;
   } else if (strcmp(operator, "-") == 0) {

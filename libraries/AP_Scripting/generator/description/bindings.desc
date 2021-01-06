@@ -142,6 +142,7 @@ include AP_Vehicle/AP_Vehicle.h
 singleton AP_Vehicle alias vehicle
 singleton AP_Vehicle method set_mode boolean uint8_t 0 UINT8_MAX ModeReason::SCRIPTING'literal
 singleton AP_Vehicle method get_mode uint8_t
+singleton AP_Vehicle method set_yaw void float 0 380 float 0 300 int8_t -1 1 boolean
 
 include AP_SerialLED/AP_SerialLED.h
 singleton AP_SerialLED alias serialLED
@@ -153,3 +154,43 @@ singleton AP_SerialLED method send void uint8_t 1 16
 include SRV_Channel/SRV_Channel.h
 singleton SRV_Channels alias SRV_Channels
 singleton SRV_Channels method find_channel boolean SRV_Channel::Aux_servo_function_t'enum SRV_Channel::k_none SRV_Channel::k_nr_aux_servo_functions-1 uint8_t'Null
+singleton SRV_Channels method set_output_pwm void SRV_Channel::Aux_servo_function_t'enum SRV_Channel::k_none SRV_Channel::k_nr_aux_servo_functions-1 uint16_t 0 UINT16_MAX
+singleton SRV_Channels method get_output_pwm boolean SRV_Channel::Aux_servo_function_t'enum SRV_Channel::k_none SRV_Channel::k_nr_aux_servo_functions-1 uint16_t'Null
+
+include RC_Channel/RC_Channel.h
+singleton RC_Channels alias rc
+singleton RC_Channels method get_pwm boolean uint8_t 1 NUM_RC_CHANNELS uint16_t'Null
+singleton RC_Channels method find_channel_for_option RC_Channel RC_Channel::AUX_FUNC'enum 0 UINT16_MAX
+
+include AP_Mission/AP_Mission.h
+singleton AP_Mission alias mission
+singleton AP_Mission enum MISSION_STOPPED MISSION_RUNNING MISSION_COMPLETE
+singleton AP_Mission method state uint8_t
+singleton AP_Mission method get_current_nav_index uint16_t
+singleton AP_Mission method set_current_cmd boolean uint16_t 0 (ud->num_commands()-1) 
+singleton AP_Mission method get_prev_nav_cmd_id uint16_t
+singleton AP_Mission method get_current_nav_id uint16_t
+singleton AP_Mission method get_current_do_cmd_id uint16_t
+singleton AP_Mission method num_commands uint16_t
+singleton AP_Mission method get_item boolean uint16_t 0 UINT16_MAX mavlink_mission_item_int_t'Null
+singleton AP_Mission method set_item boolean uint16_t 0 UINT16_MAX mavlink_mission_item_int_t
+singleton AP_Mission method clear boolean
+
+userdata mavlink_mission_item_int_t field param1 float read write -FLT_MAX FLT_MAX
+userdata mavlink_mission_item_int_t field param2 float read write -FLT_MAX FLT_MAX
+userdata mavlink_mission_item_int_t field param3 float read write -FLT_MAX FLT_MAX
+userdata mavlink_mission_item_int_t field param4 float read write -FLT_MAX FLT_MAX
+userdata mavlink_mission_item_int_t field x int32_t read write -INT32_MAX INT32_MAX
+userdata mavlink_mission_item_int_t field y int32_t read write -INT32_MAX INT32_MAX
+userdata mavlink_mission_item_int_t field z float read write -FLT_MAX FLT_MAX
+userdata mavlink_mission_item_int_t field seq uint16_t read write 0 UINT16_MAX
+userdata mavlink_mission_item_int_t field command uint16_t read write 0 UINT16_MAX
+-- userdata mavlink_mission_item_int_t field target_system uint8_t read write 0 UINT8_MAX
+-- userdata mavlink_mission_item_int_t field target_component uint8_t read write 0 UINT8_MAX
+userdata mavlink_mission_item_int_t field frame uint8_t read write  0 UINT8_MAX
+userdata mavlink_mission_item_int_t field current uint8_t read write  0 UINT8_MAX
+-- userdata mavlink_mission_item_int_t field autocontinue uint8_t read write  0 UINT8_MAX
+
+include AC_WPNav/AC_WPNav.h
+singleton AC_WPNav alias wpnav
+singleton AC_WPNav method set_yaw_cd void float 0 90

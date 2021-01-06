@@ -71,30 +71,6 @@ const AP_Param::GroupInfo AC_WPNav::var_info[] = {
     AP_GROUPEND
 };
 
-// Default constructor.
-// Note that the Vector/Matrix constructors already implicitly zero
-// their values.
-//
-AC_WPNav::AC_WPNav(const AP_InertialNav& inav, const AP_AHRS_View& ahrs, AC_PosControl& pos_control, const AC_AttitudeControl& attitude_control) :
-    _inav(inav),
-    _ahrs(ahrs),
-    _pos_control(pos_control),
-    _attitude_control(attitude_control)
-{
-    AP_Param::setup_object_defaults(this, var_info);
-
-    // init flags
-    _flags.reached_destination = false;
-    _flags.fast_waypoint = false;
-    _flags.slowing_down = false;
-    _flags.recalc_wp_leash = false;
-    _flags.new_wp_destination = false;
-    _flags.segment_type = SEGMENT_STRAIGHT;
-
-    // sanity check some parameters
-    _wp_accel_cmss = MIN(_wp_accel_cmss, GRAVITY_MSS * 100.0f * tanf(ToRad(_attitude_control.lean_angle_max() * 0.01f)));
-    _wp_radius_cm = MAX(_wp_radius_cm, WPNAV_WP_RADIUS_MIN);
-}
 
 
 ///
@@ -458,7 +434,6 @@ bool AC_WPNav::advance_wp_target_along_track(float dt)
 
     // 17.recalculate the desired position
     // _pos_delta_unit is a fix percentage per wp (how is this defined)
-
     // sitha: origin is the pos start takeoff 0.587cm, reach tf high 400cm, reach wp2 500cm, reach wp3 700cm
     // sitha: take off 4m if I set the _origin.z = 500 then the take off is 9m 
     // _origin.z=200;
@@ -1114,4 +1089,16 @@ void AC_WPNav::wp_speed_update(float dt)
     
     // flag that wp leash must be recalculated
     _flags.recalc_wp_leash = true;
+}
+
+AC_WPNav *AC_WPNav::_singleton;
+
+namespace AP
+{
+
+AC_WPNav *wpnav()
+{
+    return AC_WPNav::get_singleton();
+}
+
 }

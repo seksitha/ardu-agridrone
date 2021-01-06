@@ -742,7 +742,6 @@ void ModeAuto::takeoff_run()
 void ModeAuto::wp_run()
 {
     // process pilot's yaw input
-    // gcs().send_text(MAV_SEVERITY_INFO, "sitha: =>flags 2 %i", mission.get_current_nav_index());
     float target_yaw_rate = 0;
     if (!copter.failsafe.radio) {
         // get pilot's desired yaw rate
@@ -1136,12 +1135,12 @@ void ModeAuto::do_nav_wp(const AP_Mission::Mission_Command& cmd)
             case MAV_CMD_NAV_SPLINE_WAYPOINT:
                 // if next command's lat, lon is specified then do not slowdown at this waypoint
                 if ((temp_cmd.content.location.lat != 0) || (temp_cmd.content.location.lng != 0)) {
-                    fast_waypoint = true;
+                    fast_waypoint = false;
                 }
                 break;
             case MAV_CMD_NAV_RETURN_TO_LAUNCH:
                 // do not stop for RTL
-                fast_waypoint = true;
+                fast_waypoint = false;
                 break;
             case MAV_CMD_NAV_TAKEOFF:
             default:

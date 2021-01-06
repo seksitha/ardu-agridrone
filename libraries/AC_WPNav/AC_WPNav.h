@@ -45,8 +45,30 @@ public:
         SEGMENT_END_SPLINE
     };
 
-    /// Constructor
-    AC_WPNav(const AP_InertialNav& inav, const AP_AHRS_View& ahrs, AC_PosControl& pos_control, const AC_AttitudeControl& attitude_control);
+    // Default constructor.
+    // Note that the Vector/Matrix constructors already implicitly zero
+    // their values.
+    //
+    AC_WPNav(const AP_InertialNav& inav, const AP_AHRS_View& ahrs, AC_PosControl& pos_control, const AC_AttitudeControl& attitude_control) :
+        _inav(inav),
+        _ahrs(ahrs),
+        _pos_control(pos_control),
+        _attitude_control(attitude_control)
+    {
+        AP_Param::setup_object_defaults(this, var_info);
+        _singleton=this;
+        // init flags
+        _flags.reached_destination = false;
+        _flags.fast_waypoint = false;
+        _flags.slowing_down = false;
+        _flags.recalc_wp_leash = false;
+        _flags.new_wp_destination = false;
+        _flags.segment_type = SEGMENT_STRAIGHT;
+
+        // sanity check some parameters
+        _wp_accel_cmss = MIN(_wp_accel_cmss, GRAVITY_MSS * 100.0f * tanf(ToRad(_attitude_control.lean_angle_max() * 0.01f)));
+        _wp_radius_cm = MAX(_wp_radius_cm, WPNAV_WP_RADIUS_MIN);
+    }
 
     /// provide pointer to terrain database
     void set_terrain(AP_Terrain* terrain_ptr) { _terrain = terrain_ptr; }
@@ -222,10 +244,21 @@ public:
     float crosstrack_error() const { return _track_error_xy;}
 
     static const struct AP_Param::GroupInfo var_info[];
-
+    // set heading used for spline and waypoint navigation
+    void set_yaw_cd(float heading_cd);
+    // get singleton instance
+    static AC_WPNav *get_singleton()
+    {
+        return _singleton;
+    }
+private:
+    static AC_WPNav *_singleton;   
+    
 protected:
-
+    
     // segment types, either straight or spine
+    
+
     enum SegmentType {
         SEGMENT_STRAIGHT = 0,
         SEGMENT_SPLINE = 1
@@ -271,8 +304,7 @@ protected:
     //      returns false if conversion failed (likely because terrain data was not available)
     bool get_vector_NEU(const Location &loc, Vector3f &vec, bool &terrain_alt);
 
-    // set heading used for spline and waypoint navigation
-    void set_yaw_cd(float heading_cd);
+
 
     // references and pointers to external libraries
     const AP_InertialNav&   _inav;
