@@ -134,7 +134,16 @@ void AC_WPNav::set_speed_down(float speed_down_cms)
     // flag that wp leash must be recalculated
     _flags.recalc_wp_leash = true;
 }
-
+bool AC_WPNav::get_wp_destination(Location& destination) const
+{
+    Vector3f dest = get_wp_destination();
+    if (!AP::ahrs().get_origin(destination)) {
+        return false;
+    }
+    destination.offset(dest.x*0.01f, dest.y*0.01f);
+    destination.alt += dest.z;
+    return true;
+}
 /// set_wp_destination waypoint using location class
 ///     returns false if conversion from location to vector from ekf origin cannot be calculated
 bool AC_WPNav::set_wp_destination(const Location& destination)
@@ -149,17 +158,6 @@ bool AC_WPNav::set_wp_destination(const Location& destination)
 
     // set target as vector from EKF origin
     return set_wp_destination(dest_neu, terr_alt);
-}
-
-bool AC_WPNav::get_wp_destination(Location& destination) const
-{
-    Vector3f dest = get_wp_destination();
-    if (!AP::ahrs().get_origin(destination)) {
-        return false;
-    }
-    destination.offset(dest.x*0.01f, dest.y*0.01f);
-    destination.alt += dest.z;
-    return true;
 }
 
 /// set_wp_destination waypoint using position vector (distance from home in cm)
@@ -207,8 +205,8 @@ bool AC_WPNav::set_wp_origin_and_destination(const Vector3f& origin, const Vecto
     _origin = origin;
     // TODO: if we use waypoint instead of survey we need to elimate this
     _destination = destination;
-    _new_altitude_from_pilot = !is_zero(_pilot_clime_cm) ? curr_pos.z : _destination.z;
-    _destination.z = _new_altitude_from_pilot ;
+    _destination.z = _flags_change_alt_by_pilot ? curr_pos.z : _destination.z;
+    // reset clime alt and wait for pilot throttle cmd again
     _pilot_clime_cm = 0.0f;
     _terrain_alt = terrain_alt;
     
@@ -318,17 +316,21 @@ bool AC_WPNav::advance_wp_target_along_track(float dt)
     int32_t throttle_val = copter.channel_throttle->get_radio_in();
     // positive throttle
     if (throttle_val > 1550 && _flags_change_alt_by_pilot){
-        _pilot_clime_cm < 1000 ? _pilot_clime_cm = (_pilot_clime_cm + 0.5) : _pilot_clime_cm;
+        // test with SITL carefull with throttle not come back to 1500
+        // limit height 20m up only Test with and next waypoint clime rate is set to 0 and if throttle not 1500 it will keep going up
+        _pilot_clime_cm < 2000 ? _pilot_clime_cm = (_pilot_clime_cm + 0.5) : _pilot_clime_cm;
     }
     // negative throttle
-    if (throttle_val > 1020 && throttle_val < 1450 && _flags_change_alt_by_pilot ){
-        _pilot_clime_cm >= -(curr_pos.z * 0.3) ? _pilot_clime_cm = (_pilot_clime_cm - 0.5) : _pilot_clime_cm;
+    if (throttle_val > 999 && throttle_val < 1450 && _flags_change_alt_by_pilot ){
+        // limit height -10monly
+        // test with SITL carefull with throttle not come back to 1500 and next waypoint clime rate is set to 0 and if throttle not 1500 it will keep going down
+        _pilot_clime_cm >= -1000 ? _pilot_clime_cm = (_pilot_clime_cm - 0.5) : _pilot_clime_cm;
     }
     // mid stick is no the start if we set like this, it is going to be 0 alt
-    // gcs().send_text(MAV_SEVERITY_INFO, "sitha: =>flags 2 %f",  _pilot_clime_cm);
     if (throttle_val > 1480 && throttle_val < 1520 ){
-    
+        // this logic is not correct?
     }   
+    // gcs().send_text(MAV_SEVERITY_INFO, "sitha: =>flags 2 %f",  _pilot_clime_cm);
     // 3.calculate 3d vector from segment's origin
     Vector3f curr_delta = (curr_pos - Vector3f(0,0,terr_offset)) - _origin;
     if (_flags_change_alt_by_pilot){
@@ -464,8 +466,9 @@ bool AC_WPNav::advance_wp_target_along_track(float dt)
                     dist_to_dest.z -= _pilot_clime_cm;
                 }
                 if( dist_to_dest.length() <= _wp_radius_cm ) {
-                    _flags.reached_destination = true;
                     _flags_change_alt_by_pilot = true;
+                    _flags.reached_destination = true;
+                    // allow change altitude after the takeoff 
                 }
             }
         }
@@ -530,7 +533,7 @@ bool AC_WPNav::update_wpnav()
         _flags.new_wp_destination = false;
         _pos_control.freeze_ff_z();
     }
-
+    // gcs().send_text(MAV_SEVERITY_INFO, "sitha: =>fast %i",  _flags.fast_waypoint);
     _pos_control.update_xy_controller();
     check_wp_leash_length();
 
@@ -1090,15 +1093,45 @@ void AC_WPNav::wp_speed_update(float dt)
     // flag that wp leash must be recalculated
     _flags.recalc_wp_leash = true;
 }
+void AC_WPNav::reset_param_on_start_mission(){
+    _flags_change_alt_by_pilot =false;
+    _pilot_clime_cm = 0.0f;
+}
+void AC_WPNav::irq_handler(uint8_t pin, bool pin_state, uint32_t timestamp)
+{
+    if (pin_state == 1) {
+        irq_state.last_pulse_us = timestamp;
+    } else if (irq_state.last_pulse_us != 0) {
+        irq_state.pulse_width_us = timestamp - irq_state.last_pulse_us;
+        irq_state.pulse_count1 ++;
+    }
+}
+uint16_t AC_WPNav::readFlowSensor(uint8_t pin){
+
+    uint8_t last_pin = pin;
+    if (last_pin > 0) {
+        if (last_pin > 0) {
+            hal.gpio->detach_interrupt(last_pin);
+        }
+        hal.gpio->pinMode(last_pin, HAL_GPIO_INPUT);
+        if (!hal.gpio->attach_interrupt(last_pin,FUNCTOR_BIND_MEMBER(&AC_WPNav::irq_handler, void, uint8_t, bool, uint32_t),
+                AP_HAL::GPIO::INTERRUPT_BOTH)) {
+            gcs().send_text(MAV_SEVERITY_INFO, "FlowSensor: Failed to attach to pin %u", unsigned(last_pin));
+        }
+    }
+    uint16_t pulse_width = irq_state.pulse_width_us;
+    return pulse_width;
+}
+
 
 AC_WPNav *AC_WPNav::_singleton;
 
 namespace AP
 {
 
-AC_WPNav *wpnav()
-{
-    return AC_WPNav::get_singleton();
-}
+    AC_WPNav *wpnav()
+    {
+        return AC_WPNav::get_singleton();
+    }
 
 }

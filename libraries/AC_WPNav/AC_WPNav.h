@@ -251,8 +251,18 @@ public:
     {
         return _singleton;
     }
+    void reset_param_on_start_mission();
+    int8_t test(){return 100;}
+    uint16_t readFlowSensor(uint8_t pin);
 private:
+    void irq_handler(uint8_t pin, bool pin_state, uint32_t timestamp);
     static AC_WPNav *_singleton;   
+      struct IrqState {
+        uint32_t last_pulse_us;
+        uint32_t pulse_width_us;
+        uint32_t pulse_count1;
+    } irq_state;
+
     
 protected:
     
@@ -338,7 +348,7 @@ protected:
     float       _slow_down_dist;        // vehicle should begin to slow down once it is within this distance from the destination
     bool        _flags_change_alt_by_pilot = false;
     float       _pilot_clime_cm = 0.00f;
-    float       _new_altitude_from_pilot = 0.00f;
+    // float       _new_altitude_from_pilot = 0.00f;
     bool        _flags_mid_stick = false;
     
     // spline variables
@@ -357,3 +367,7 @@ protected:
     bool        _rangefinder_healthy;
     float       _rangefinder_alt_cm;
 };
+namespace AP
+{
+    AC_WPNav *wpnav();
+}

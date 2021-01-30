@@ -1080,6 +1080,7 @@ Location ModeAuto::terrain_adjusted_location(const AP_Mission::Mission_Command& 
 void ModeAuto::do_takeoff(const AP_Mission::Mission_Command& cmd)
 {
     // Set wp navigation target to safe altitude above current position
+    copter.wp_nav->reset_param_on_start_mission();
     takeoff_start(cmd.content.location);
 }
 
@@ -1487,7 +1488,9 @@ void ModeAuto::do_payload_place(const AP_Mission::Mission_Command& cmd)
 void ModeAuto::do_RTL(void)
 {
     // start rtl in auto flight mode
+    copter.wp_nav->reset_param_on_start_mission();
     rtl_start();
+
 }
 
 /********************************************************************************/

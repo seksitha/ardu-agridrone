@@ -349,6 +349,7 @@ public:
     float override_timeout_ms() const {
         return _override_timeout.get() * 1e3f;
     }
+    bool get_pwm(uint8_t channel, uint16_t &pwm) const;
 
 protected:
 

@@ -718,6 +718,36 @@ const luaL_Reg Location_meta[] = {
     {NULL, NULL}
 };
 
+static int AC_WPNav_test(lua_State *L) {
+    AC_WPNav * ud = AC_WPNav::get_singleton();
+    if (ud == nullptr) {
+        return luaL_argerror(L, 1, "wpnav not supported on this firmware");
+    }
+
+    binding_argcheck(L, 1);
+    const int8_t data = ud->test();
+
+    lua_pushinteger(L, data);
+    return 1;
+}
+
+static int AC_WPNav_readFlowSensor(lua_State *L) {
+    AC_WPNav * ud = AC_WPNav::get_singleton();
+    if (ud == nullptr) {
+        return luaL_argerror(L, 1, "wpnav not supported on this firmware");
+    }
+
+    binding_argcheck(L, 2);
+    const lua_Integer raw_data_2 = luaL_checkinteger(L, 2);
+    luaL_argcheck(L, ((raw_data_2 >= MAX(0, 0)) && (raw_data_2 <= MIN(60, UINT8_MAX))), 2, "argument out of range");
+    const uint8_t data_2 = static_cast<uint8_t>(raw_data_2);
+    const uint16_t data = ud->readFlowSensor(
+            data_2);
+
+    lua_pushinteger(L, data);
+    return 1;
+}
+
 static int AC_WPNav_set_yaw_cd(lua_State *L) {
     AC_WPNav * ud = AC_WPNav::get_singleton();
     if (ud == nullptr) {
@@ -885,7 +915,7 @@ static int AP_Mission_state(lua_State *L) {
     return 1;
 }
 
-static int RC_Channels_find_channel_for_option(lua_State *L) {
+static int RC_Channels_get_radio_in(lua_State *L) {
     RC_Channels * ud = RC_Channels::get_singleton();
     if (ud == nullptr) {
         return luaL_argerror(L, 1, "rc not supported on this firmware");
@@ -893,13 +923,12 @@ static int RC_Channels_find_channel_for_option(lua_State *L) {
 
     binding_argcheck(L, 2);
     const lua_Integer raw_data_2 = luaL_checkinteger(L, 2);
-    luaL_argcheck(L, ((raw_data_2 >= static_cast<int32_t>(0)) && (raw_data_2 <= static_cast<int32_t>(UINT16_MAX))), 2, "argument out of range");
-    const RC_Channel::AUX_FUNC data_2 = static_cast<RC_Channel::AUX_FUNC>(raw_data_2);
-    const RC_Channel &data = ud->find_channel_for_option(
+    luaL_argcheck(L, ((raw_data_2 >= MAX(0, 0)) && (raw_data_2 <= MIN(10, UINT8_MAX))), 2, "argument out of range");
+    const uint8_t data_2 = static_cast<uint8_t>(raw_data_2);
+    const uint16_t data = ud->get_radio_in(
             data_2);
 
-    new_RC_Channel(L);
-    *check_RC_Channel(L, -1) = data;
+    lua_pushinteger(L, data);
     return 1;
 }
 
@@ -924,6 +953,26 @@ static int RC_Channels_get_pwm(lua_State *L) {
         lua_pushnil(L);
     }
     return 1;
+}
+
+static int SRV_Channels_set_output_pwm_chan(lua_State *L) {
+    SRV_Channels * ud = SRV_Channels::get_singleton();
+    if (ud == nullptr) {
+        return luaL_argerror(L, 1, "SRV_Channels not supported on this firmware");
+    }
+
+    binding_argcheck(L, 3);
+    const lua_Integer raw_data_2 = luaL_checkinteger(L, 2);
+    luaL_argcheck(L, ((raw_data_2 >= MAX(8, 0)) && (raw_data_2 <= MIN(12, UINT8_MAX))), 2, "argument out of range");
+    const uint8_t data_2 = static_cast<uint8_t>(raw_data_2);
+    const lua_Integer raw_data_3 = luaL_checkinteger(L, 3);
+    luaL_argcheck(L, ((raw_data_3 >= MAX(1000, 0)) && (raw_data_3 <= MIN(2000, UINT16_MAX))), 3, "argument out of range");
+    const uint16_t data_3 = static_cast<uint16_t>(raw_data_3);
+    ud->set_output_pwm_chan(
+            data_2,
+            data_3);
+
+    return 0;
 }
 
 static int SRV_Channels_get_output_pwm(lua_State *L) {
@@ -2233,6 +2282,8 @@ static int AP_AHRS_get_roll(lua_State *L) {
 }
 
 const luaL_Reg AC_WPNav_meta[] = {
+    {"test", AC_WPNav_test},
+    {"readFlowSensor", AC_WPNav_readFlowSensor},
     {"set_yaw_cd", AC_WPNav_set_yaw_cd},
     {NULL, NULL}
 };
@@ -2252,12 +2303,13 @@ const luaL_Reg AP_Mission_meta[] = {
 };
 
 const luaL_Reg RC_Channels_meta[] = {
-    {"find_channel_for_option", RC_Channels_find_channel_for_option},
+    {"get_radio_in", RC_Channels_get_radio_in},
     {"get_pwm", RC_Channels_get_pwm},
     {NULL, NULL}
 };
 
 const luaL_Reg SRV_Channels_meta[] = {
+    {"set_output_pwm_chan", SRV_Channels_set_output_pwm_chan},
     {"get_output_pwm", SRV_Channels_get_output_pwm},
     {"set_output_pwm", SRV_Channels_set_output_pwm},
     {"find_channel", SRV_Channels_find_channel},
