@@ -321,7 +321,7 @@ bool AC_WPNav::advance_wp_target_along_track(float dt)
         _pilot_clime_cm < 2000 ? _pilot_clime_cm = (_pilot_clime_cm + 0.5) : _pilot_clime_cm;
     }
     // negative throttle
-    if (throttle_val > 999 && throttle_val < 1450 && _flags_change_alt_by_pilot ){
+    if (throttle_val > 1050 && throttle_val < 1450 && _flags_change_alt_by_pilot ){
         // limit height -10monly
         // test with SITL carefull with throttle not come back to 1500 and next waypoint clime rate is set to 0 and if throttle not 1500 it will keep going down
         _pilot_clime_cm >= -1000 ? _pilot_clime_cm = (_pilot_clime_cm - 0.5) : _pilot_clime_cm;
