@@ -395,13 +395,20 @@ void ModeAuto::payload_place_start()
 // start_command - this function will be called when the ap_mission lib wishes to start a new command
 bool ModeAuto::start_command(const AP_Mission::Mission_Command& cmd)
 {
+    copter.alert_empty_tank = false;
+    wp_nav->loiter_state_after_mission_completed = false;
+    
     // To-Do: logging when new commands start/end
     if (copter.should_log(MASK_LOG_CMD)) {
         copter.logger.Write_Mission_Cmd(mission, cmd);
     }
-
+    
+    if(cmd.index == 1){
+        cmd_16_index = 0;
+        copter.mission_16_index = 0;
+    }
+    // gcs().send_text(MAV_SEVERITY_INFO, "sitha: =>index %i", cmd.index);
     switch(cmd.id) {
-
     ///
     /// navigation commands
     ///
@@ -1112,15 +1119,22 @@ Location ModeAuto::loc_from_cmd(const AP_Mission::Mission_Command& cmd) const
 void ModeAuto::do_nav_wp(const AP_Mission::Mission_Command& cmd)
 {
     Location target_loc = loc_from_cmd(cmd);
-
     // this will be used to remember the time in millis after we reach or pass the WP.
     loiter_time = 0;
     // this is the delay, stored in seconds
     loiter_time_max = cmd.p1;
+    cmd_16_index = cmd_16_index + 1; // cmd_16_index is 0 at start so need to pluse one
+    copter.mission_16_index = cmd_16_index;
+
+    if (cmd_16_index % 2 == 0 && copter.mission_16_index > 1 ) {
+        copter.set_pump_spinner_pwm(true);
+    } 
+    if (cmd_16_index % 2 != 0)  {
+        copter.set_pump_spinner_pwm(false);
+    }
 
     // Set wp navigation target
     wp_start(target_loc);
-
     // if no delay as well as not final waypoint set the waypoint as "fast"
     AP_Mission::Mission_Command temp_cmd;
     bool fast_waypoint = false;
@@ -1129,7 +1143,7 @@ void ModeAuto::do_nav_wp(const AP_Mission::Mission_Command& cmd)
         // whether vehicle should stop at the target position depends upon the next command
         switch (temp_cmd.id) {
             case MAV_CMD_NAV_WAYPOINT:
-            case MAV_CMD_NAV_LOITER_UNLIM:
+            case  MAV_CMD_NAV_LOITER_UNLIM:
             case MAV_CMD_NAV_LOITER_TURNS:
             case MAV_CMD_NAV_LOITER_TIME:
             case MAV_CMD_NAV_LAND:

@@ -608,6 +608,17 @@ static int Vector3f___sub(lua_State *L) {
     return 1;
 }
 
+static int Location_get_bearing_to(lua_State *L) {
+    binding_argcheck(L, 2);
+    Location * ud = check_Location(L, 1);
+    Location & data_2 = *check_Location(L, 2);
+    const int32_t data = ud->get_bearing_to(
+            data_2);
+
+    lua_pushinteger(L, data);
+    return 1;
+}
+
 static int Location_get_bearing(lua_State *L) {
     binding_argcheck(L, 2);
     Location * ud = check_Location(L, 1);
@@ -711,6 +722,7 @@ const luaL_Reg Location_meta[] = {
     {"relative_alt", Location_relative_alt},
     {"lng", Location_lng},
     {"lat", Location_lat},
+    {"get_bearing_to", Location_get_bearing_to},
     {"get_bearing", Location_get_bearing},
     {"get_vector_from_origin_NEU", Location_get_vector_from_origin_NEU},
     {"offset", Location_offset},

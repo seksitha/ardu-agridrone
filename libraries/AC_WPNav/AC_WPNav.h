@@ -254,15 +254,15 @@ public:
     void reset_param_on_start_mission();
     int8_t test(){return 100;}
     uint16_t readFlowSensor(uint8_t pin);
+    bool loiter_state_after_mission_completed = false;
 private:
     void irq_handler(uint8_t pin, bool pin_state, uint32_t timestamp);
     static AC_WPNav *_singleton;   
-      struct IrqState {
+    struct IrqState {
         uint32_t last_pulse_us;
         uint32_t pulse_width_us;
         uint32_t pulse_count1;
     } irq_state;
-
     
 protected:
     

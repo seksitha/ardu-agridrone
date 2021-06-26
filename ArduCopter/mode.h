@@ -329,6 +329,7 @@ public:
 
     bool init(bool ignore_checks) override;
     void run() override;
+    
 
     bool requires_GPS() const override { return true; }
     bool has_manual_throttle() const override { return false; }
@@ -369,7 +370,7 @@ public:
         FUNCTOR_BIND_MEMBER(&ModeAuto::start_command, bool, const AP_Mission::Mission_Command &),
         FUNCTOR_BIND_MEMBER(&ModeAuto::verify_command, bool, const AP_Mission::Mission_Command &),
         FUNCTOR_BIND_MEMBER(&ModeAuto::exit_mission, void)};
-
+    int16_t cmd_16_index = 0;
 protected:
 
     const char *name() const override { return "AUTO"; }
@@ -382,7 +383,7 @@ protected:
     void run_autopilot() override;
 
 private:
-
+    
     bool start_command(const AP_Mission::Mission_Command& cmd);
     bool verify_command(const AP_Mission::Mission_Command& cmd);
     void exit_mission();

@@ -290,6 +290,7 @@ void Copter::rc_loop()
     // -----------------------------------------
     read_radio();
     rc().read_mode_switch();
+    
 }
 
 // throttle_loop - should be run at 50 hz
@@ -382,6 +383,52 @@ void Copter::ten_hz_logging_loop()
 #if FRAME_CONFIG == HELI_FRAME
     Log_Write_Heli();
 #endif
+    if (RC_Channels::get_radio_in(9) > 1500){
+        uint16_t flow_val = wp_nav->readFlowSensor(60);
+        if (sensor_loop_index >= 25){
+            gcs().send_text(MAV_SEVERITY_INFO, "sensor val %i", flow_val);
+            sensor_loop_index = 0;
+        }
+        sensor_loop_index = sensor_loop_index + 1;
+    }
+
+    /*FLOWSENSOR */
+    if(get_mode()==3 && copter.mission_16_index > 1){
+        // not to trigger the flow sensor at the beginning of the mission.
+        uint8_t delay_monitor_flow = 40;
+        if (copter.mission_16_index % 2 != 0) {
+            mission_timer_not_to_monitor_flow_at_start_waypoint = 0;
+            return;
+        }
+        if( copter.mission_16_index % 2 == 0  && mission_timer_not_to_monitor_flow_at_start_waypoint < delay_monitor_flow) {
+            mission_timer_not_to_monitor_flow_at_start_waypoint = mission_timer_not_to_monitor_flow_at_start_waypoint + 1;
+            // gcs().send_text(MAV_SEVERITY_WARNING, "no_mot_start %i %i",mission_16_index,mission_timer_not_to_monitor_flow_at_start_waypoint);
+            return;
+        }
+        
+        // if empty tank stop copter
+        if (mission_timer_not_to_monitor_flow_at_start_waypoint >= delay_monitor_flow && RC_Channels::get_radio_in(6) > 1400 ){
+        // if (mission_timer_not_to_monitor_flow_at_start_waypoint >= 20 && copter.mission_16_index % 2 == 0){
+            float flow_val = wp_nav->readFlowSensor(60);
+            flow_value = flow_val > 999 ? flow_value + flow_val : flow_value + 13000;
+            // flow_value =  flow_value + flow_val;
+            uint8_t loop_counter_max = 4;
+            if ( flow_index >= loop_counter_max) {
+                if ( RC_Channels::get_radio_in(9) > 1400){
+                    gcs().send_text(MAV_SEVERITY_INFO, "flow val %f %f", flow_value/5, flow_val);
+                }
+                if ((flow_value/(loop_counter_max+1)) > 25000 && !alert_empty_tank ){
+                    gcs().send_text(MAV_SEVERITY_CRITICAL, "Water Tank Empty");
+                    copter.set_mode(Mode::Number::LOITER, ModeReason::GCS_COMMAND);
+                    alert_empty_tank = true;
+                }
+                flow_value = 0;
+            }
+
+            flow_index = flow_index >= loop_counter_max ? 0 : flow_index+1;
+            
+        }
+    }
 }
 
 // twentyfive_hz_logging - should be run at 25hz
@@ -413,6 +460,7 @@ void Copter::twentyfive_hz_logging()
         g2.arot.Log_Write_Autorotation();
     }
 #endif
+    
 }
 
 // three_hz_loop - 3.3hz loop
@@ -420,23 +468,121 @@ void Copter::three_hz_loop()
 {
     // check if we've lost contact with the ground station
     failsafe_gcs_check();
-
     // check if we've lost terrain data
     failsafe_terrain_check();
 
-#if AC_FENCE == ENABLED
-    // check if we have breached a fence
-    fence_check();
-#endif // AC_FENCE_ENABLED
-
-
+    #if AC_FENCE == ENABLED
+        // check if we have breached a fence
+        fence_check();
+    #endif // AC_FENCE_ENABLED
     // update ch6 in flight tuning
     tuning();
+    
 }
 
+void Copter::set_pump_spinner_pwm(bool state){
+    if( state == false) {
+        SRV_Channels::set_output_pwm_chan( chan_pump , 1000);
+        SRV_Channels::set_output_pwm_chan( chan_spinner , 1000);
+        // gcs().send_text(MAV_SEVERITY_INFO, "spray off");
+    }
+    if(state == true){
+        if (rc6_pwm != RC_Channels::get_radio_in(5) or rc8_pwm != RC_Channels::get_radio_in(7) ){
+            rc6_pwm = RC_Channels::get_radio_in(5);
+            rc8_pwm = RC_Channels::get_radio_in(7);
+        }
+        SRV_Channels::set_output_pwm_chan( chan_pump , rc6_pwm);
+        SRV_Channels::set_output_pwm_chan( chan_spinner , rc8_pwm);
+        // gcs().send_text(MAV_SEVERITY_INFO, "spray on");
+    }
+}
 // one_hz_loop - runs at 1Hz
 void Copter::one_hz_loop()
 {
+    // SPRAY speed update
+    if(!chan_pump){
+        SRV_Channels::find_channel(SRV_Channel::k_sprayer_pump,chan_pump);
+        // gcs().send_text(MAV_SEVERITY_INFO, "sitha: =>chanel_pum %i", chan_pump);
+    }
+    if(!chan_spinner){
+        SRV_Channels::find_channel(SRV_Channel::k_sprayer_spinner,chan_spinner);
+        // gcs().send_text(MAV_SEVERITY_INFO, "sitha: =>chanel_pum %i", chan_spinner);
+    }
+    // PUMP switch on off
+    if(RC_Channels::get_radio_in(6) < 1600 && !pump_off_on_boot){
+        pump_off_on_boot = true;
+    }
+    if (copter.get_mode()!=3 /*not auto*/ && chan_pump && chan_spinner && pump_off_on_boot){
+        if (RC_Channels::get_radio_in(6) > 1500){
+            float flow_val = wp_nav->readFlowSensor(60);
+            if(flow_val < 1600){
+                set_pump_spinner_pwm(true);
+            }else{
+                set_pump_spinner_pwm(false); 
+            }
+        } else {
+            set_pump_spinner_pwm(false);         
+        }
+        /*TODO (done) stop pray RTL*/
+        mission_16_index = 0;
+        copter.mode_auto.cmd_16_index=0;
+    }
+    if(mode_auto.mission.state() == 2 and wp_nav->loiter_state_after_mission_completed == false){
+        /*TODO (Done) misison complete loiter and stop spray*/ 
+        copter.set_mode(Mode::Number::LOITER, ModeReason::GCS_COMMAND);
+        set_pump_spinner_pwm(false);   
+        wp_nav->loiter_state_after_mission_completed = true;
+    }
+    /* BREAKPOINT resuming when empty tank*/
+    if( !motors->armed() && mode_auto.mission.num_commands() && 
+        current_mission_index > 2 && 
+        current_mission_length - (current_mission_index - 3) == mode_auto.mission.num_commands())
+    {    
+        if (copter.current_mission_index % 2 == 0){
+            copter.spray_at_16_even = true;
+        } else {
+            copter.spray_at_16_even = false;
+        }
+
+        // gcs().send_text(MAV_SEVERITY_INFO, "sitha: => curr_in %i %i %i",current_mission_index, current_mission_length,mode_auto.mission.num_commands() );
+        // get new mission finish location and second waypoint loc
+        mavlink_mission_item_int_t new_mission_finish_point ;
+        mode_auto.mission.get_item(mode_auto.mission.num_commands()-1, new_mission_finish_point);
+        
+        mavlink_mission_item_int_t new_mission_waypoint_2 ;
+        mode_auto.mission.get_item(2, new_mission_waypoint_2);
+        // gcs().send_text(MAV_SEVERITY_INFO, "sitha: => new %i", new_mission_waypoint_2.x);
+        // gcs().send_text(MAV_SEVERITY_INFO, "sitha: => old %i", mission_breakpoint.lat);
+
+        if( current_mission_waypoint_finish_point.x == new_mission_finish_point.x && 
+            new_mission_waypoint_2.x != mission_breakpoint.lat && 
+            new_mission_waypoint_2.y != mission_breakpoint.lng )
+        {
+  
+            // gcs().send_text(MAV_SEVERITY_INFO, "sitha: => breakpoint hit2");
+            new_mission_waypoint_2.x = mission_breakpoint.lat;
+            new_mission_waypoint_2.y = mission_breakpoint.lng;
+            // current_mission_index include takeoff, mission_16_index only cmd_16
+            if (copter.mission_16_index % 2 != 0){ // only happen when pilot stop at even wapoint
+                /*TODO (Done) make sure the number 2 wp is spray point not turn point and not take off command*/
+                new_mission_waypoint_2.command = 177; // change command to jump command 
+                new_mission_waypoint_2.param1 = 3;
+                new_mission_waypoint_2.param2 = 0;
+            }
+            mode_auto.mission.set_item(2, new_mission_waypoint_2 );
+        }
+    }
+    // MISSION break by user and resume
+    if (motors->armed() && copter.get_mode()!=4 /*not to set waypoint when redo guided+auto*/&& mode_auto.mission.num_commands() == current_mission_length && mode_auto.mission.state() == 0 && current_mission_index > 2){
+        mavlink_mission_item_int_t current_waypoint ;
+        mode_auto.mission.get_item(current_mission_index-1, current_waypoint);
+        current_waypoint.x = mission_breakpoint.lat;
+        current_waypoint.y = mission_breakpoint.lng;
+        mode_auto.mission.set_item(current_mission_index-1, current_waypoint);
+        mode_auto.mission.set_current_cmd(current_mission_index-1);
+    }
+    
+    // 
     if (should_log(MASK_LOG_ANY)) {
         Log_Write_Data(DATA_AP_STATE, ap.value);
     }
@@ -616,6 +762,7 @@ Copter::Copter(void)
     inertial_nav(ahrs),
     param_loader(var_info),
     flightmode(&mode_stabilize)
+
 {
     // init sensor error logging flags
     sensor_health.baro = true;

@@ -305,33 +305,52 @@ bool AC_WPNav::advance_wp_target_along_track(float dt)
     float track_leash_slack;    // additional distance (in cm) along the track from our track_covered position that our leash will allow
     bool reached_leash_limit = false;   // true when track has reached leash limit and we need to slow down the target point
 
-    // 1. get current location
-    const Vector3f &curr_pos = _inav.get_position();
-
     // 2. calculate terrain adjustments
     float terr_offset = 0.0f;
     if (_terrain_alt && !get_terrain_offset(terr_offset)) {
         return false;
     }
+
+    /* BREAKPOINT resuming when empty tank*/
+    if(copter.mode_auto.mission.state() != 0){ // we don't want code to run at RTL because it use wpnav controller too
+        if(copter.mode_auto.mission.get_current_nav_index() == 1){
+            copter.mode_auto.mission.get_item(copter.mode_auto.mission.num_commands() - 1,copter.current_mission_waypoint_finish_point);
+        }
+        copter.ahrs.get_position(copter.mission_breakpoint); // assigning current post to mission_breakpoint
+        copter.current_mission_length = copter.mode_auto.mission.num_commands(); // total command + 1
+        copter.current_mission_index = copter.mode_auto.mission.get_current_nav_index();
+        // gcs().send_text(MAV_SEVERITY_INFO, "sitha: => c_le %i", copter.current_mission_index);
+    }
+
+    /* PUMPSPINNER speed change detector: pump and spinner only at spray time or will spray all the time */
+    if (copter.rc6_pwm != RC_Channels::get_radio_in(5) or copter.rc8_pwm != RC_Channels::get_radio_in(7) ){
+        if (copter.mission_16_index % 2 == 0 && copter.mode_auto.cmd_16_index > 1) copter.set_pump_spinner_pwm(true);
+    }
+    
+    /* ALT: Altitude*/
     int32_t throttle_val = copter.channel_throttle->get_radio_in();
     // positive throttle
-    if (throttle_val > 1550 && _flags_change_alt_by_pilot){
+    if (throttle_val > 1550 && _flags_change_alt_by_pilot ){
         // test with SITL carefull with throttle not come back to 1500
         // limit height 20m up only Test with and next waypoint clime rate is set to 0 and if throttle not 1500 it will keep going up
-        _pilot_clime_cm < 2000 ? _pilot_clime_cm = (_pilot_clime_cm + 0.5) : _pilot_clime_cm;
+        _pilot_clime_cm < 2000 ? _pilot_clime_cm = (_pilot_clime_cm + ((float)throttle_val/5000)) : _pilot_clime_cm;
     }
     // negative throttle
-    if (throttle_val > 1050 && throttle_val < 1450 && _flags_change_alt_by_pilot ){
+    else if (throttle_val < 1450 && _flags_change_alt_by_pilot  && throttle_val > 1000 /* SITL start at rc 3 1000*/ ){
         // limit height -10monly
         // test with SITL carefull with throttle not come back to 1500 and next waypoint clime rate is set to 0 and if throttle not 1500 it will keep going down
-        _pilot_clime_cm >= -1000 ? _pilot_clime_cm = (_pilot_clime_cm - 0.5) : _pilot_clime_cm;
+        _pilot_clime_cm = (_pilot_clime_cm - 0.3);
     }
-    // mid stick is no the start if we set like this, it is going to be 0 alt
-    if (throttle_val > 1480 && throttle_val < 1520 ){
-        // this logic is not correct?
+    // mid stick 
+    else {
+        // if we set like this, it is going to be reverted to original alt which copter stay at mission alt
+        // so this should comment out. 
+        // _pilot_clime_cm = 0.0f;
     }   
     // gcs().send_text(MAV_SEVERITY_INFO, "sitha: =>flags 2 %f",  _pilot_clime_cm);
     // 3.calculate 3d vector from segment's origin
+    // 1. get current location
+    const Vector3f &curr_pos = _inav.get_position();
     Vector3f curr_delta = (curr_pos - Vector3f(0,0,terr_offset)) - _origin;
     if (_flags_change_alt_by_pilot){
         curr_delta.z -= _pilot_clime_cm;
@@ -468,6 +487,7 @@ bool AC_WPNav::advance_wp_target_along_track(float dt)
                 if( dist_to_dest.length() <= _wp_radius_cm ) {
                     _flags_change_alt_by_pilot = true;
                     _flags.reached_destination = true;
+                    // _pilot_clime_cm = 0.0f;
                     // allow change altitude after the takeoff 
                 }
             }
@@ -690,7 +710,7 @@ bool AC_WPNav::set_spline_origin_and_destination(const Vector3f& origin, const V
 {
     // mission is "active" if wpnav has been called recently and vehicle reached the previous waypoint
     bool prev_segment_exists = (_flags.reached_destination && ((AP_HAL::millis() - _wp_last_update) < 1000));
-    gcs().send_text(MAV_SEVERITY_INFO, "sitha: =>flags 2 %i",  _flags.fast_waypoint);
+    // gcs().send_text(MAV_SEVERITY_INFO, "sitha: =>flags 2 %i",  _flags.fast_waypoint);
     // get dt from pos controller
     float dt = _pos_control.get_dt();
 

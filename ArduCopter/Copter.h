@@ -660,6 +660,24 @@ private:
     // ArduCopter.cpp
     void fast_loop();
     void rc_loop();
+    uint8_t chan_pump;
+    uint8_t chan_spinner;
+    uint16_t mission_16_index;
+    bool pump_off_on_boot = false;
+    uint16_t rc6_pwm;
+    uint16_t rc8_pwm;
+    uint16_t current_mission_length;
+    uint16_t current_mission_index;
+    uint8_t sensor_loop_index = 0;
+    uint8_t flow_loop_counter = 0;
+    float flow_value = 0;
+    uint8_t mission_timer_not_to_monitor_flow_at_start_waypoint = 0;
+    uint8_t flow_index = 0;
+    bool spray_at_16_even = false;
+    bool alert_empty_tank = false;
+    Location mission_breakpoint;
+    mavlink_mission_item_int_t current_mission_waypoint_finish_point;
+    void set_pump_spinner_pwm(bool state);
     void throttle_loop();
     void update_batt_compass(void);
     void fourhundred_hz_logging();
@@ -917,7 +935,6 @@ private:
     void userhook_auxSwitch1(uint8_t ch_flag);
     void userhook_auxSwitch2(uint8_t ch_flag);
     void userhook_auxSwitch3(uint8_t ch_flag);
-
 #if OSD_ENABLED == ENABLED
     void publish_osd_info();
 #endif
