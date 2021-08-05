@@ -375,6 +375,7 @@ public:
 
         // the k_param_* space is 9-bits in size
         // 511: reserved
+        k_param_user_param,
     };
 
     AP_Int16        format_version;
@@ -446,6 +447,7 @@ public:
     AP_Int8         fs_crash_check;
     AP_Float        fs_ekf_thresh;
     AP_Int16        gcs_pid_mask;
+    AP_Int16        user_param;
 
 #if MODE_THROW_ENABLED == ENABLED
     AP_Int8         throw_motor_start;

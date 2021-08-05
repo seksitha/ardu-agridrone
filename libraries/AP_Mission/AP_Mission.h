@@ -197,7 +197,7 @@ public:
         float release_length;   // cable distance to unwind in meters, negative numbers to wind in cable
         float release_rate;     // release rate in meters/second
     };
-
+    bool mission_uploaded_success_state = false;
     union Content {
         // jump structure
         Jump_Command jump;
@@ -663,7 +663,7 @@ private:
     mission_cmd_fn_t        _cmd_start_fn;  // pointer to function which will be called when a new command is started
     mission_cmd_fn_t        _cmd_verify_fn; // pointer to function which will be called repeatedly to ensure a command is progressing
     mission_complete_fn_t   _mission_complete_fn;   // pointer to function which will be called when mission completes
-
+    
     // internal variables
     struct Mission_Command  _nav_cmd;   // current "navigation" command.  It's position in the command list is held in _nav_cmd.index
     struct Mission_Command  _do_cmd;    // current "do" command.  It's position in the command list is held in _do_cmd.index

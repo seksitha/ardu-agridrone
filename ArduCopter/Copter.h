@@ -26,6 +26,7 @@
 #include <stdarg.h>
 
 #include <AP_HAL/AP_HAL.h>
+// #include "../libraries/AP_HAL_ChibiOS/GPIO.h"
 
 // Common dependencies
 #include <AP_Common/AP_Common.h>
@@ -670,7 +671,7 @@ private:
     uint16_t current_mission_index;
     uint8_t sensor_loop_index = 0;
     uint8_t flow_loop_counter = 0;
-    float flow_value = 0;
+    uint16_t flow_value = 0;
     uint8_t mission_timer_not_to_monitor_flow_at_start_waypoint = 0;
     uint8_t flow_index = 0;
     bool spray_at_16_even = false;

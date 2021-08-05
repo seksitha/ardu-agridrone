@@ -14,7 +14,7 @@ bool ModeLoiter::init(bool ignore_checks)
         // apply SIMPLE mode transform to pilot inputs
         update_simple_mode();
 
-        // convert pilot input to lean angles
+        // convert pilot input to lean angles " Sitha: loiter_nav is ac_loiter.cpp define in mode.cpp
         get_pilot_desired_lean_angles(target_roll, target_pitch, loiter_nav->get_angle_max_cd(), attitude_control->get_althold_lean_angle_max());
 
         // process pilot's roll and pitch input

@@ -33,6 +33,8 @@
 #define WPNAV_YAW_LEASH_PCT_MIN         0.134f      // target point must be at least this distance from the vehicle (expressed as a percentage of the maximum distance it can be from the vehicle - i.e. the leash length)
 
 #define WPNAV_RANGEFINDER_FILT_Z         0.25f      // range finder distance filtered at 0.25hz
+#define WPNAV_COORDINATE_WE             5.00f           
+#define WPNAV_COORDINATE_NS             0.00f           
 
 class AC_WPNav
 {
@@ -255,6 +257,7 @@ public:
     int8_t test(){return 100;}
     uint16_t readFlowSensor(uint8_t pin);
     bool loiter_state_after_mission_completed = false;
+    bool break_auto_by_user_state = false;
 private:
     void irq_handler(uint8_t pin, bool pin_state, uint32_t timestamp);
     static AC_WPNav *_singleton;   
@@ -330,6 +333,8 @@ protected:
     AP_Float    _wp_radius_cm;          // distance from a waypoint in cm that, when crossed, indicates the wp has been reached
     AP_Float    _wp_accel_cmss;          // horizontal acceleration in cm/s/s during missions
     AP_Float    _wp_accel_z_cmss;        // vertical acceleration in cm/s/s during missions
+    AP_Float    _corect_coordinate_we;
+    AP_Float    _corect_coordinate_ns;
 
     // waypoint controller internal variables
     uint32_t    _wp_last_update;        // time of last update_wpnav call

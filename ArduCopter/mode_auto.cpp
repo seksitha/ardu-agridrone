@@ -393,6 +393,7 @@ void ModeAuto::payload_place_start()
 }
 
 // start_command - this function will be called when the ap_mission lib wishes to start a new command
+// in ModeAuto.h FUNCTOR_BIND_MEMBER(&ModeAuto::start_command, bool, const AP_Mission::Mission_Command &),
 bool ModeAuto::start_command(const AP_Mission::Mission_Command& cmd)
 {
     copter.alert_empty_tank = false;
@@ -788,7 +789,7 @@ void ModeAuto::wp_run()
 //      called by auto_run at 100hz or more
 void ModeAuto::spline_run()
 {
-    // if not armed set throttle to zero and exit immediately
+    // if not armed set throttle to z ero and exit immediately
     if (is_disarmed_or_landed()) {
         make_safe_spool_down();
         wp_nav->wp_and_spline_init();
@@ -1086,8 +1087,8 @@ Location ModeAuto::terrain_adjusted_location(const AP_Mission::Mission_Command& 
 // do_takeoff - initiate takeoff navigation command
 void ModeAuto::do_takeoff(const AP_Mission::Mission_Command& cmd)
 {
+    copter.wp_nav->reset_param_on_start_mission(); // sitha code
     // Set wp navigation target to safe altitude above current position
-    copter.wp_nav->reset_param_on_start_mission();
     takeoff_start(cmd.content.location);
 }
 
@@ -1150,7 +1151,12 @@ void ModeAuto::do_nav_wp(const AP_Mission::Mission_Command& cmd)
             case MAV_CMD_NAV_SPLINE_WAYPOINT:
                 // if next command's lat, lon is specified then do not slowdown at this waypoint
                 if ((temp_cmd.content.location.lat != 0) || (temp_cmd.content.location.lng != 0)) {
-                    fast_waypoint = false;
+                    fast_waypoint = true;
+                    // Sitha: I change this to false to let the copter stay at the exact corner
+                    // but this cause the spray too much at corner. 
+                    // Put it to true cause the copter stop spraying too early because the flag reach waypoint is about 10m
+                    // wp_radius did not help flag the reach but work for the turn corner
+                    // https://github.com/ArduPilot/ardupilot/issues/6194 look at Randy suggestion
                 }
                 break;
             case MAV_CMD_NAV_RETURN_TO_LAUNCH:

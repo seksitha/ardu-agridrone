@@ -54,6 +54,7 @@ MAV_MISSION_RESULT MissionItemProtocol_Waypoints::complete(const GCS_MAVLINK &_l
 {
     _link.send_text(MAV_SEVERITY_INFO, "Flight plan received");
     AP::logger().Write_EntireMission();
+    mission.mission_uploaded_success_state = true;
     return MAV_MISSION_ACCEPTED;
 }
 

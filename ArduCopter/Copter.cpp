@@ -223,6 +223,7 @@ void Copter::setup()
 
     // initialise the main loop scheduler
     scheduler.init(&scheduler_tasks[0], ARRAY_SIZE(scheduler_tasks), MASK_LOG_PM);
+    hal.gpio->pinMode(60,0);
 }
 
 void Copter::loop()
@@ -248,12 +249,12 @@ void Copter::fast_loop()
     // --------------------
     read_AHRS();
 
-#if FRAME_CONFIG == HELI_FRAME
-    update_heli_control_dynamics();
-    #if MODE_AUTOROTATE_ENABLED == ENABLED
-        heli_update_autorotation();
-    #endif
-#endif //HELI_FRAME
+    #if FRAME_CONFIG == HELI_FRAME
+        update_heli_control_dynamics();
+        #if MODE_AUTOROTATE_ENABLED == ENABLED
+            heli_update_autorotation();
+        #endif
+    #endif //HELI_FRAME
 
     // Inertial Nav
     // --------------------
@@ -271,10 +272,10 @@ void Copter::fast_loop()
     // check if we've landed or crashed
     update_land_and_crash_detectors();
 
-#if MOUNT == ENABLED
-    // camera mount's fast update
-    camera_mount.update_fast();
-#endif
+    #if MOUNT == ENABLED
+        // camera mount's fast update
+        camera_mount.update_fast();
+    #endif
 
     // log sensor health
     if (should_log(MASK_LOG_ANY)) {
@@ -303,13 +304,13 @@ void Copter::throttle_loop()
     // check auto_armed status
     update_auto_armed();
 
-#if FRAME_CONFIG == HELI_FRAME
-    // update rotor speed
-    heli_update_rotor_speed_targets();
+    #if FRAME_CONFIG == HELI_FRAME
+        // update rotor speed
+        heli_update_rotor_speed_targets();
 
-    // update trad heli swash plate movement
-    heli_update_landing_swash();
-#endif
+        // update trad heli swash plate movement
+        heli_update_landing_swash();
+    #endif
 
     // compensate for ground effect (if enabled)
     update_ground_effect_detector();
@@ -373,18 +374,20 @@ void Copter::ten_hz_logging_loop()
     }
     if (should_log(MASK_LOG_CTUN)) {
         attitude_control->control_monitor_log();
-#if PROXIMITY_ENABLED == ENABLED
-        logger.Write_Proximity(g2.proximity);  // Write proximity sensor distances
-#endif
-#if BEACON_ENABLED == ENABLED
-        logger.Write_Beacon(g2.beacon);
-#endif
-    }
-#if FRAME_CONFIG == HELI_FRAME
-    Log_Write_Heli();
-#endif
+    #if PROXIMITY_ENABLED == ENABLED
+            logger.Write_Proximity(g2.proximity);  // Write proximity sensor distances
+    #endif
+    #if BEACON_ENABLED == ENABLED
+            logger.Write_Beacon(g2.beacon);
+    #endif
+        }
+    #if FRAME_CONFIG == HELI_FRAME
+        Log_Write_Heli();
+    #endif
+    // read value of level sensor
     if (RC_Channels::get_radio_in(9) > 1500){
-        uint16_t flow_val = wp_nav->readFlowSensor(60);
+        //uint16_t flow_val = wp_nav->readFlowSensor(60);
+        uint16_t flow_val = hal.gpio->read(60);
         if (sensor_loop_index >= 25){
             gcs().send_text(MAV_SEVERITY_INFO, "sensor val %i", flow_val);
             sensor_loop_index = 0;
@@ -409,15 +412,15 @@ void Copter::ten_hz_logging_loop()
         // if empty tank stop copter
         if (mission_timer_not_to_monitor_flow_at_start_waypoint >= delay_monitor_flow && RC_Channels::get_radio_in(6) > 1400 ){
         // if (mission_timer_not_to_monitor_flow_at_start_waypoint >= 20 && copter.mission_16_index % 2 == 0){
-            float flow_val = wp_nav->readFlowSensor(60);
-            flow_value = flow_val > 999 ? flow_value + flow_val : flow_value + 13000;
+            uint16_t flow_val = hal.gpio->read(60);
+            flow_value = flow_value + flow_val ;
             // flow_value =  flow_value + flow_val;
             uint8_t loop_counter_max = 4;
             if ( flow_index >= loop_counter_max) {
                 if ( RC_Channels::get_radio_in(9) > 1400){
-                    gcs().send_text(MAV_SEVERITY_INFO, "flow val %f %f", flow_value/5, flow_val);
+                    gcs().send_text(MAV_SEVERITY_INFO, "flow val %i %i", flow_value/5, flow_val);
                 }
-                if ((flow_value/(loop_counter_max+1)) > 25000 && !alert_empty_tank ){
+                if ((flow_value/(loop_counter_max+1)) == 1 && !alert_empty_tank ){
                     gcs().send_text(MAV_SEVERITY_CRITICAL, "Water Tank Empty");
                     copter.set_mode(Mode::Number::LOITER, ModeReason::GCS_COMMAND);
                     alert_empty_tank = true;
@@ -434,32 +437,32 @@ void Copter::ten_hz_logging_loop()
 // twentyfive_hz_logging - should be run at 25hz
 void Copter::twentyfive_hz_logging()
 {
-#if HIL_MODE != HIL_MODE_DISABLED
-    // HIL for a copter needs very fast update of the servo values
-    gcs().send_message(MSG_SERVO_OUTPUT_RAW);
-#endif
+    #if HIL_MODE != HIL_MODE_DISABLED
+        // HIL for a copter needs very fast update of the servo values
+        gcs().send_message(MSG_SERVO_OUTPUT_RAW);
+    #endif
 
-#if HIL_MODE == HIL_MODE_DISABLED
-    if (should_log(MASK_LOG_ATTITUDE_FAST)) {
-        Log_Write_EKF_POS();
-    }
+    #if HIL_MODE == HIL_MODE_DISABLED
+        if (should_log(MASK_LOG_ATTITUDE_FAST)) {
+            Log_Write_EKF_POS();
+        }
 
-    if (should_log(MASK_LOG_IMU)) {
-        logger.Write_IMU();
-    }
-#endif
+        if (should_log(MASK_LOG_IMU)) {
+            logger.Write_IMU();
+        }
+    #endif
 
-#if PRECISION_LANDING == ENABLED
-    // log output
-    Log_Write_Precland();
-#endif
+    #if PRECISION_LANDING == ENABLED
+        // log output
+        Log_Write_Precland();
+    #endif
 
-#if MODE_AUTOROTATE_ENABLED == ENABLED
-    if (should_log(MASK_LOG_ATTITUDE_MED) || should_log(MASK_LOG_ATTITUDE_FAST)) {
-        //update autorotation log
-        g2.arot.Log_Write_Autorotation();
-    }
-#endif
+    #if MODE_AUTOROTATE_ENABLED == ENABLED
+        if (should_log(MASK_LOG_ATTITUDE_MED) || should_log(MASK_LOG_ATTITUDE_FAST)) {
+            //update autorotation log
+            g2.arot.Log_Write_Autorotation();
+        }
+    #endif
     
 }
 
@@ -480,13 +483,13 @@ void Copter::three_hz_loop()
     
 }
 
-void Copter::set_pump_spinner_pwm(bool state){
-    if( state == false) {
+void Copter::set_pump_spinner_pwm(bool spray_state){
+    if( spray_state == false) {
         SRV_Channels::set_output_pwm_chan( chan_pump , 1000);
         SRV_Channels::set_output_pwm_chan( chan_spinner , 1000);
         // gcs().send_text(MAV_SEVERITY_INFO, "spray off");
     }
-    if(state == true){
+    if(spray_state == true){
         if (rc6_pwm != RC_Channels::get_radio_in(5) or rc8_pwm != RC_Channels::get_radio_in(7) ){
             rc6_pwm = RC_Channels::get_radio_in(5);
             rc8_pwm = RC_Channels::get_radio_in(7);
@@ -502,7 +505,6 @@ void Copter::one_hz_loop()
     // SPRAY speed update
     if(!chan_pump){
         SRV_Channels::find_channel(SRV_Channel::k_sprayer_pump,chan_pump);
-        // gcs().send_text(MAV_SEVERITY_INFO, "sitha: =>chanel_pum %i", chan_pump);
     }
     if(!chan_spinner){
         SRV_Channels::find_channel(SRV_Channel::k_sprayer_spinner,chan_spinner);
@@ -512,10 +514,11 @@ void Copter::one_hz_loop()
     if(RC_Channels::get_radio_in(6) < 1600 && !pump_off_on_boot){
         pump_off_on_boot = true;
     }
+    // switch the pump on by RC
     if (copter.get_mode()!=3 /*not auto*/ && chan_pump && chan_spinner && pump_off_on_boot){
         if (RC_Channels::get_radio_in(6) > 1500){
-            float flow_val = wp_nav->readFlowSensor(60);
-            if(flow_val < 1600){
+            uint16_t flow_val = hal.gpio->read(60); //wp_nav->readFlowSensor(60);
+            if(flow_val == 0){
                 set_pump_spinner_pwm(true);
             }else{
                 set_pump_spinner_pwm(false); 
@@ -523,43 +526,48 @@ void Copter::one_hz_loop()
         } else {
             set_pump_spinner_pwm(false);         
         }
-        /*TODO (done) stop pray RTL*/
-        mission_16_index = 0;
-        copter.mode_auto.cmd_16_index=0;
     }
+
+    /*(Done) misison complete loiter and stop spray*/ 
     if(mode_auto.mission.state() == 2 and wp_nav->loiter_state_after_mission_completed == false){
-        /*TODO (Done) misison complete loiter and stop spray*/ 
         copter.set_mode(Mode::Number::LOITER, ModeReason::GCS_COMMAND);
         set_pump_spinner_pwm(false);   
         wp_nav->loiter_state_after_mission_completed = true;
     }
-    /* BREAKPOINT resuming when empty tank*/
-    if( !motors->armed() && mode_auto.mission.num_commands() && 
-        current_mission_index > 2 && 
-        current_mission_length - (current_mission_index - 3) == mode_auto.mission.num_commands())
-    {    
-        if (copter.current_mission_index % 2 == 0){
-            copter.spray_at_16_even = true;
-        } else {
-            copter.spray_at_16_even = false;
-        }
 
-        // gcs().send_text(MAV_SEVERITY_INFO, "sitha: => curr_in %i %i %i",current_mission_index, current_mission_length,mode_auto.mission.num_commands() );
-        // get new mission finish location and second waypoint loc
+    // 
+    // MISSIONBREAKPOINT code start here.
+    if( copter.get_mode() == 3 && mode_auto.mission.mission_uploaded_success_state ){
+        mode_auto.mission.mission_uploaded_success_state = false;
+        // gcs().send_text(MAV_SEVERITY_INFO, "sitha: => ___________breakpoint hit1");
+    }
+
+    /* BREAKPOINT resuming when empty tank*/
+    // TEST case A, upload mission -> stop -> continue, stop @ wp 2, 3, 5, 7 then land 
+    // hit resume, then fly auto -> hit loiter immediately -> hit auto see where it go.
+    // wait till wp 5 -> land -> resume -> download plan
+
+    // TEST case B: fly auto , stop at wp 4 and start again will spray at that point?
+    
+    if( !motors->armed() && mode_auto.mission.num_commands() &&  mode_auto.mission.mission_uploaded_success_state == true)
+    {   
+        // get new mission finish location after resume command hit
         mavlink_mission_item_int_t new_mission_finish_point ;
         mode_auto.mission.get_item(mode_auto.mission.num_commands()-1, new_mission_finish_point);
-        
+        // get new mission wapypoint #2 location after resume command hit
         mavlink_mission_item_int_t new_mission_waypoint_2 ;
         mode_auto.mission.get_item(2, new_mission_waypoint_2);
         // gcs().send_text(MAV_SEVERITY_INFO, "sitha: => new %i", new_mission_waypoint_2.x);
         // gcs().send_text(MAV_SEVERITY_INFO, "sitha: => old %i", mission_breakpoint.lat);
-
+        
+        /* WESET breakpoint only if the end point is the same with new upload plan 
+        and the length is sorter than the old one otherwise we can not upload new mission when 
+        user make mistake*/
         if( current_mission_waypoint_finish_point.x == new_mission_finish_point.x && 
-            new_mission_waypoint_2.x != mission_breakpoint.lat && 
-            new_mission_waypoint_2.y != mission_breakpoint.lng )
+            current_mission_waypoint_finish_point.y == new_mission_finish_point.y &&
+            mode_auto.mission.num_commands() < current_mission_length )
         {
-  
-            // gcs().send_text(MAV_SEVERITY_INFO, "sitha: => breakpoint hit2");
+            gcs().send_text(MAV_SEVERITY_INFO, "sitha: => _______resume success");
             new_mission_waypoint_2.x = mission_breakpoint.lat;
             new_mission_waypoint_2.y = mission_breakpoint.lng;
             // current_mission_index include takeoff, mission_16_index only cmd_16
@@ -569,19 +577,43 @@ void Copter::one_hz_loop()
                 new_mission_waypoint_2.param1 = 3;
                 new_mission_waypoint_2.param2 = 0;
             }
-            mode_auto.mission.set_item(2, new_mission_waypoint_2 );
+            mode_auto.mission.set_item(2, new_mission_waypoint_2 );  
+            // we set this to false so that it is not doing it again and again 
+            // and when we upload it is not reset out mission
+            mode_auto.mission.mission_uploaded_success_state = false;
         }
     }
-    // MISSION break by user and resume
-    if (motors->armed() && copter.get_mode()!=4 /*not to set waypoint when redo guided+auto*/&& mode_auto.mission.num_commands() == current_mission_length && mode_auto.mission.state() == 0 && current_mission_index > 2){
+    // MISSION break by user and resume / this prevent user fly to somewhere and decide to resume so it resume to breakpoint
+    if(copter.current_mission_index > 2){
+        wp_nav->break_auto_by_user_state = true;
+    }
+    if (motors->armed() && copter.get_mode()!=3 /*not equal auto*/
+        && mode_auto.mission.state() == 0 
+        && current_mission_index >= 3 && wp_nav->break_auto_by_user_state == true)
+    {
+        // gcs().send_text(MAV_SEVERITY_INFO, "sitha: => _________breakpoint success");
         mavlink_mission_item_int_t current_waypoint ;
         mode_auto.mission.get_item(current_mission_index-1, current_waypoint);
         current_waypoint.x = mission_breakpoint.lat;
         current_waypoint.y = mission_breakpoint.lng;
         mode_auto.mission.set_item(current_mission_index-1, current_waypoint);
         mode_auto.mission.set_current_cmd(current_mission_index-1);
+        wp_nav->break_auto_by_user_state = false;
     }
+    // gcs().send_text(MAV_SEVERITY_INFO, "sitha: =>mission_16_index %i", mission_16_index);
+    // gcs().send_text(MAV_SEVERITY_INFO, "sitha: => c_le %i", copter.current_mission_index);
     
+    if(copter.get_mode()!=3 /*not = auto*/ ){
+        // when start mission cmd.index == 1 set 16_index to zero
+        // but when break it is not reset because cmd.index is not one any if fly auto for some time
+        mission_16_index = 0;
+        if(!motors->armed()) { // prevent on take off set current waypoint the old user break point
+            mode_auto.cmd_16_index= 0;
+            current_mission_index = 0;
+            wp_nav->break_auto_by_user_state = false;
+        }
+    }
+    // MISSIONBREAKPOINT code end here.
     // 
     if (should_log(MASK_LOG_ANY)) {
         Log_Write_Data(DATA_AP_STATE, ap.value);
@@ -598,10 +630,10 @@ void Copter::one_hz_loop()
         // check the user hasn't updated the frame class or type
         motors->set_frame_class_and_type((AP_Motors::motor_frame_class)g2.frame_class.get(), (AP_Motors::motor_frame_type)g.frame_type.get());
 
-#if FRAME_CONFIG != HELI_FRAME
-        // set all throttle channel settings
-        motors->set_throttle_range(channel_throttle->get_radio_min(), channel_throttle->get_radio_max());
-#endif
+        #if FRAME_CONFIG != HELI_FRAME
+                // set all throttle channel settings
+                motors->set_throttle_range(channel_throttle->get_radio_min(), channel_throttle->get_radio_max());
+        #endif
     }
 
     // update assigned functions and enable auxiliary servos
@@ -610,9 +642,9 @@ void Copter::one_hz_loop()
     // log terrain data
     terrain_logging();
 
-#if ADSB_ENABLED == ENABLED
-    adsb.set_is_flying(!ap.land_complete);
-#endif
+    #if ADSB_ENABLED == ENABLED
+        adsb.set_is_flying(!ap.land_complete);
+    #endif
 
     AP_Notify::flags.flying = !ap.land_complete;
 }
@@ -635,9 +667,9 @@ void Copter::update_GPS(void)
     }
 
     if (gps_updated) {
-#if CAMERA == ENABLED
-        camera.update();
-#endif
+    #if CAMERA == ENABLED
+            camera.update();
+    #endif
     }
 }
 
@@ -716,10 +748,10 @@ void Copter::read_AHRS(void)
 {
     // Perform IMU calculations and get attitude info
     //-----------------------------------------------
-#if HIL_MODE != HIL_MODE_DISABLED
-    // update hil before ahrs update
-    gcs().update();
-#endif
+    #if HIL_MODE != HIL_MODE_DISABLED
+        // update hil before ahrs update
+        gcs().update();
+    #endif
 
     // we tell AHRS to skip INS update as we have already done it in fast_loop()
     ahrs.update(true);

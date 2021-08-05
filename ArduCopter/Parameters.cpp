@@ -36,6 +36,12 @@
 #endif
 
 const AP_Param::Info Copter::var_info[] = {
+    // @Param: USER_PARAM
+    // @DisplayName: coordinate correction
+    // @Description: correction west east
+    // @Range: 1 25
+    // @User: Advanced
+    GSCALAR(user_param, "USER_PARAM", MY_PARAM_DEFAULT),
     // @Param: SYSID_SW_MREV
     // @DisplayName: Eeprom format version number
     // @Description: This value is incremented when changes are made to the eeprom format

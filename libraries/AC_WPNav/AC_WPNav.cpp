@@ -67,6 +67,13 @@ const AP_Param::GroupInfo AC_WPNav::var_info[] = {
     // @Values: 0:Disable,1:Enable
     // @User: Advanced
     AP_GROUPINFO("RFND_USE",   10, AC_WPNav, _rangefinder_use, 1),
+    // @Param: COOR
+    // @DisplayName: coorect coordinate west east
+    // @Description: add it to coorection
+    // @Range: 1 10
+    // @User: Standard
+    AP_GROUPINFO("COOR_WE",   7, AC_WPNav, _corect_coordinate_we, WPNAV_COORDINATE_WE),
+    AP_GROUPINFO("COOR_NS",   8, AC_WPNav, _corect_coordinate_ns, WPNAV_COORDINATE_NS),
 
     AP_GROUPEND
 };
@@ -204,7 +211,14 @@ bool AC_WPNav::set_wp_origin_and_destination(const Vector3f& origin, const Vecto
     const Vector3f &curr_pos = _inav.get_position();
     _origin = origin;
     // TODO: if we use waypoint instead of survey we need to elimate this
+    // destination.x = destination.x + 100;
     _destination = destination;
+    // gcs().send_text(MAV_SEVERITY_INFO, "sitha: =>index %i", copter.mode_auto.mission.get_current_nav_index());
+    if(copter.mode_auto.mission.get_current_nav_index() > 1 && (copter.get_mode()==3 || copter.get_mode() == 4) ){
+        _destination.y = destination.y+(_corect_coordinate_we * 100);
+        _destination.x = destination.x+(_corect_coordinate_ns * 100);
+    }
+    
     _destination.z = _flags_change_alt_by_pilot ? curr_pos.z : _destination.z;
     // reset clime alt and wait for pilot throttle cmd again
     _pilot_clime_cm = 0.0f;
@@ -319,7 +333,7 @@ bool AC_WPNav::advance_wp_target_along_track(float dt)
         copter.ahrs.get_position(copter.mission_breakpoint); // assigning current post to mission_breakpoint
         copter.current_mission_length = copter.mode_auto.mission.num_commands(); // total command + 1
         copter.current_mission_index = copter.mode_auto.mission.get_current_nav_index();
-        // gcs().send_text(MAV_SEVERITY_INFO, "sitha: => c_le %i", copter.current_mission_index);
+        
     }
 
     /* PUMPSPINNER speed change detector: pump and spinner only at spray time or will spray all the time */
@@ -351,14 +365,15 @@ bool AC_WPNav::advance_wp_target_along_track(float dt)
     // 3.calculate 3d vector from segment's origin
     // 1. get current location
     const Vector3f &curr_pos = _inav.get_position();
+    // _origin.x = _origin.x+200;
     Vector3f curr_delta = (curr_pos - Vector3f(0,0,terr_offset)) - _origin;
     if (_flags_change_alt_by_pilot){
         curr_delta.z -= _pilot_clime_cm;
         // gcs().send_text(MAV_SEVERITY_INFO, "sitha: =>hit %f", _pos_delta_unit.z);
     }
     
-    // 4.calculate how far along the track we are
-    track_covered = curr_delta.x * _pos_delta_unit.x + curr_delta.y * _pos_delta_unit.y + curr_delta.z * _pos_delta_unit.z;
+    // 4.calculate how far along the track we are in cm?
+    track_covered = curr_delta.x * _pos_delta_unit.x + (curr_delta.y) * _pos_delta_unit.y + curr_delta.z * _pos_delta_unit.z;
     // 5.calculate the point closest to the vehicle on the segment from origin to destination
     Vector3f track_covered_pos = _pos_delta_unit * track_covered;
     // 6.calculate the distance vector from the vehicle to the closest point on the segment from origin to destination
@@ -471,11 +486,17 @@ bool AC_WPNav::advance_wp_target_along_track(float dt)
     // if (throttle_val > 1020 && throttle_val < 2000){
     //     _pos_control.set_alt_target_from_climb_rate(500, dt, false);
     // }
+
     // 18.check if we've reached the waypoint
     if( !_flags.reached_destination ) {
         if( _track_desired >= _track_length ) {
             // "fast" waypoints are complete once the intermediate point reaches the destination
             if (_flags.fast_waypoint) {
+                // Vector3f dist_to_dest = (curr_pos - Vector3f(0,0,terr_offset)) - _destination;
+                // if (_flags_change_alt_by_pilot){
+                //     dist_to_dest.z -= _pilot_clime_cm;
+                // }
+                gcs().send_text(MAV_SEVERITY_INFO, "_____________hit flags");
                 _flags.reached_destination = true;
                 _flags_change_alt_by_pilot = true;
             }else{
@@ -487,7 +508,6 @@ bool AC_WPNav::advance_wp_target_along_track(float dt)
                 if( dist_to_dest.length() <= _wp_radius_cm ) {
                     _flags_change_alt_by_pilot = true;
                     _flags.reached_destination = true;
-                    // _pilot_clime_cm = 0.0f;
                     // allow change altitude after the takeoff 
                 }
             }
