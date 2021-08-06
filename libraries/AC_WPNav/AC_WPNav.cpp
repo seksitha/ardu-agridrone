@@ -224,10 +224,11 @@ bool AC_WPNav::set_wp_origin_and_destination(const Vector3f& origin, const Vecto
     _pilot_clime_cm = 0.0f;
     _terrain_alt = terrain_alt;
     
-    // _destination.z += 200;
+
     Vector3f pos_delta = _destination - _origin; // minus x, y, z seperately
     // .length{ return norm(x,y,x)}
     _track_length = pos_delta.length(); // get track length
+    // _track_length = _track_length + 200;
     _track_length_xy = safe_sqrt(sq(pos_delta.x)+sq(pos_delta.y));  // get horizontal track length (used to decide if we should update yaw)
 
     // calculate each axis' percentage of the total distance to the destination
@@ -431,6 +432,7 @@ bool AC_WPNav::advance_wp_target_along_track(float dt)
         _limited_speed_xy_cms = constrain_float(_limited_speed_xy_cms, 0.0f, _track_speed);
 
         // check if we should begin slowing down
+        // track_length is set in set_wp_origin_and destination
         if (!_flags.fast_waypoint) {
             float dist_to_dest = _track_length - _track_desired;
             if (!_flags.slowing_down && dist_to_dest <= _slow_down_dist) {
@@ -463,7 +465,7 @@ bool AC_WPNav::advance_wp_target_along_track(float dt)
 
     // 16.do not let desired point go past the end of the track unless it's a fast waypoint
     if (_flags.fast_waypoint) {
-        _track_desired = constrain_float(_track_desired, 0, _track_length + WPNAV_WP_FAST_OVERSHOOT_MAX);
+        _track_desired = constrain_float(_track_desired, 0, _track_length + 10.0f);
     } else {
         _track_desired = constrain_float(_track_desired, 0, _track_length);
     }
@@ -489,18 +491,22 @@ bool AC_WPNav::advance_wp_target_along_track(float dt)
 
     // 18.check if we've reached the waypoint
     if( !_flags.reached_destination ) {
-        if( _track_desired >= _track_length ) {
+        // gcs().send_text(MAV_SEVERITY_INFO, "__________tracklenght %f %f", _track_desired, _track_length);
+        if( _track_desired >= _track_length ) { // hit only once
             // "fast" waypoints are complete once the intermediate point reaches the destination
+            // gcs().send_text(MAV_SEVERITY_INFO, "_____________hit yyy");
             if (_flags.fast_waypoint) {
                 // Vector3f dist_to_dest = (curr_pos - Vector3f(0,0,terr_offset)) - _destination;
                 // if (_flags_change_alt_by_pilot){
                 //     dist_to_dest.z -= _pilot_clime_cm;
                 // }
-                gcs().send_text(MAV_SEVERITY_INFO, "_____________hit flags");
                 _flags.reached_destination = true;
+                // gcs().send_text(MAV_SEVERITY_INFO, "____¿se_________hit flags");
+                
                 _flags_change_alt_by_pilot = true;
             }else{
                 // regular waypoints also require the copter to be within the waypoint radius
+                // gcs().send_text(MAV_SEVERITY_INFO, "_____________hit no");                                                                                                                                  
                 Vector3f dist_to_dest = (curr_pos - Vector3f(0,0,terr_offset)) - _destination;
                 if (_flags_change_alt_by_pilot){
                     dist_to_dest.z -= _pilot_clime_cm;
@@ -527,7 +533,7 @@ bool AC_WPNav::advance_wp_target_along_track(float dt)
             }
         }
     }
-
+    gcs().send_text(MAV_SEVERITY_INFO, "__________tracklenght %f %f", _track_desired, _track_length);
     // 20.successfully advanced along track
     return true;
 }
@@ -574,7 +580,7 @@ bool AC_WPNav::update_wpnav()
         _pos_control.freeze_ff_z();
     }
     // gcs().send_text(MAV_SEVERITY_INFO, "sitha: =>fast %i",  _flags.fast_waypoint);
-    _pos_control.update_xy_controller();
+    // _pos_control.update_xy_controller();
     check_wp_leash_length();
 
     _wp_last_update = AP_HAL::millis();
@@ -1082,7 +1088,7 @@ void AC_WPNav::calc_slow_down_distance(float speed_cms, float accel_cmss)
 	}
     // To-Do: should we use a combination of horizontal and vertical speeds?
     // To-Do: update this automatically when speed or acceleration is changed
-    _slow_down_dist = speed_cms * speed_cms / (4.0f*accel_cmss);
+    _slow_down_dist = speed_cms * speed_cms / (1.5f*accel_cmss);
 }
 
 /// get_slow_down_speed - returns target speed of target point based on distance from the destination (in cm)

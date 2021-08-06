@@ -8,7 +8,7 @@
     "test": "tests"
   },
   "scripts": {
-    "start": "cd Tools/vagrant && vagrant up && vagrant ssh -c 'sim_vehicle.py -v ArduCopter -j 2 --custom-location=13.03865,103.29179,0,0'"
+    "start": "sim_vehicle.py -v ArduCopter -j 2 --custom-location=13.03865,103.29179,0,0"
   },
   "repository": {
     "type": "git",

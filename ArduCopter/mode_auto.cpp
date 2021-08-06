@@ -1136,6 +1136,7 @@ void ModeAuto::do_nav_wp(const AP_Mission::Mission_Command& cmd)
 
     // Set wp navigation target
     wp_start(target_loc);
+    
     // if no delay as well as not final waypoint set the waypoint as "fast"
     AP_Mission::Mission_Command temp_cmd;
     bool fast_waypoint = false;
@@ -1144,7 +1145,7 @@ void ModeAuto::do_nav_wp(const AP_Mission::Mission_Command& cmd)
         // whether vehicle should stop at the target position depends upon the next command
         switch (temp_cmd.id) {
             case MAV_CMD_NAV_WAYPOINT:
-            case  MAV_CMD_NAV_LOITER_UNLIM:
+            case MAV_CMD_NAV_LOITER_UNLIM:
             case MAV_CMD_NAV_LOITER_TURNS:
             case MAV_CMD_NAV_LOITER_TIME:
             case MAV_CMD_NAV_LAND:
@@ -1157,6 +1158,7 @@ void ModeAuto::do_nav_wp(const AP_Mission::Mission_Command& cmd)
                     // Put it to true cause the copter stop spraying too early because the flag reach waypoint is about 10m
                     // wp_radius did not help flag the reach but work for the turn corner
                     // https://github.com/ArduPilot/ardupilot/issues/6194 look at Randy suggestion
+                    // that will make calc_slow_down_distance()
                 }
                 break;
             case MAV_CMD_NAV_RETURN_TO_LAUNCH:
@@ -1815,11 +1817,12 @@ bool ModeAuto::verify_nav_wp(const AP_Mission::Mission_Command& cmd)
 {
     // check if we have reached the waypoint
     if ( !copter.wp_nav->reached_wp_destination() ) {
+        // stop the code here if it is not reach wp
         return false;
     }
 
     // start timer if necessary
-    if (loiter_time == 0) {
+    if (loiter_time == 0) { 
         loiter_time = millis();
 		if (loiter_time_max > 0) {
 			// play a tone
@@ -1829,11 +1832,14 @@ bool ModeAuto::verify_nav_wp(const AP_Mission::Mission_Command& cmd)
 
     // check if timer has run out
     if (((millis() - loiter_time) / 1000) >= loiter_time_max) {
-		if (loiter_time_max == 0) {
+    // if ((millis() - loiter_time)>= 1) {
+		
+        if (loiter_time_max == 0) {
 			// play a tone
-			AP_Notify::events.waypoint_complete = 1;
-			}
-        gcs().send_text(MAV_SEVERITY_INFO, "Reached command #%i",cmd.index);
+			// AP_Notify::events.waypoint_complete = 1;
+		}
+
+        gcs().send_text(MAV_SEVERITY_INFO, "Reached wp #%i",cmd.index);
         return true;
     }
     return false;
