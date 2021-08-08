@@ -115,8 +115,8 @@ const AP_Scheduler::Task Copter::scheduler_tasks[] = {
 #if VISUAL_ODOMETRY_ENABLED == ENABLED
     SCHED_TASK_CLASS(AP_VisualOdom,       &copter.g2.visual_odom,        update,         400,  50),
 #endif
-    SCHED_TASK(update_altitude,       10,    100),
-    SCHED_TASK(run_nav_updates,       50,    100),
+    SCHED_TASK(update_altitude,       10,    100), 
+    SCHED_TASK(run_nav_updates,       50,    100), // mission.update() & mission.verify_cmd
     SCHED_TASK(update_throttle_hover,100,     90),
 #if MODE_SMARTRTL_ENABLED == ENABLED
     SCHED_TASK_CLASS(ModeSmartRTL, &copter.mode_smartrtl,       save_position,    3, 100),
@@ -487,7 +487,7 @@ void Copter::set_pump_spinner_pwm(bool spray_state){
     if( spray_state == false) {
         SRV_Channels::set_output_pwm_chan( chan_pump , 1000);
         SRV_Channels::set_output_pwm_chan( chan_spinner , 1000);
-        gcs().send_text(MAV_SEVERITY_INFO, "spray off");
+        // gcs().send_text(MAV_SEVERITY_INFO, "spray off");
     }
     if(spray_state == true){
         if (rc6_pwm != RC_Channels::get_radio_in(5) or rc8_pwm != RC_Channels::get_radio_in(7) ){
@@ -496,7 +496,7 @@ void Copter::set_pump_spinner_pwm(bool spray_state){
         }
         SRV_Channels::set_output_pwm_chan( chan_pump , rc6_pwm);
         SRV_Channels::set_output_pwm_chan( chan_spinner , rc8_pwm);
-        gcs().send_text(MAV_SEVERITY_INFO, "spray on");
+        // gcs().send_text(MAV_SEVERITY_INFO, "spray on");
     }
 }
 // one_hz_loop - runs at 1Hz

@@ -57,6 +57,7 @@ bool ModeAuto::init(bool ignore_checks)
 void ModeAuto::run()
 {
     // call the correct auto controller
+    // gcs().send_text(MAV_SEVERITY_INFO, "__________auto_run %i" , millis());
     switch (_mode) {
 
     case Auto_TakeOff:
@@ -85,9 +86,9 @@ void ModeAuto::run()
         break;
 
     case Auto_NavGuided:
-#if NAV_GUIDED == ENABLED
-        nav_guided_run();
-#endif
+    #if NAV_GUIDED == ENABLED
+            nav_guided_run();
+    #endif
         break;
 
     case Auto_Loiter:
@@ -651,6 +652,8 @@ bool ModeAuto::verify_command(const AP_Mission::Mission_Command& cmd)
         break;
 
     case MAV_CMD_NAV_WAYPOINT:
+    
+    // process pilot's yaw input
         cmd_complete = verify_nav_wp(cmd);
         break;
 
@@ -747,9 +750,9 @@ void ModeAuto::takeoff_run()
 
 // auto_wp_run - runs the auto waypoint controller
 //      called by auto_run at 100hz or more
-void ModeAuto::wp_run()
+void ModeAuto::wp_run() // this is a low frequency loop
 {
-    // process pilot's yaw input
+    
     float target_yaw_rate = 0;
     if (!copter.failsafe.radio) {
         // get pilot's desired yaw rate
@@ -1119,6 +1122,7 @@ Location ModeAuto::loc_from_cmd(const AP_Mission::Mission_Command& cmd) const
 // do_nav_wp - initiate move to next waypoint
 void ModeAuto::do_nav_wp(const AP_Mission::Mission_Command& cmd)
 {
+    
     Location target_loc = loc_from_cmd(cmd);
     // this will be used to remember the time in millis after we reach or pass the WP.
     loiter_time = 0;
@@ -1133,7 +1137,7 @@ void ModeAuto::do_nav_wp(const AP_Mission::Mission_Command& cmd)
     if (cmd_16_index % 2 != 0)  {
         copter.set_pump_spinner_pwm(false);
     }
-
+    
     // Set wp navigation target
     wp_start(target_loc);
     
@@ -1152,7 +1156,9 @@ void ModeAuto::do_nav_wp(const AP_Mission::Mission_Command& cmd)
             case MAV_CMD_NAV_SPLINE_WAYPOINT:
                 // if next command's lat, lon is specified then do not slowdown at this waypoint
                 if ((temp_cmd.content.location.lat != 0) || (temp_cmd.content.location.lng != 0)) {
-                    fast_waypoint = true;
+                    if(cmd.index > 2 && cmd.index % 2 == 0 ){
+                        fast_waypoint = true;
+                    }
                     // Sitha: I change this to false to let the copter stay at the exact corner
                     // but this cause the spray too much at corner. 
                     // Put it to true cause the copter stop spraying too early because the flag reach waypoint is about 10m
@@ -1173,6 +1179,7 @@ void ModeAuto::do_nav_wp(const AP_Mission::Mission_Command& cmd)
         }
         copter.wp_nav->set_fast_waypoint(fast_waypoint);
     }
+    
 }
 
 // do_land - initiate landing procedure
