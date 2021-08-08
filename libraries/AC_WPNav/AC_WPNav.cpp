@@ -208,6 +208,7 @@ bool AC_WPNav::set_wp_destination_NED(const Vector3f& destination_NED)
 bool AC_WPNav::set_wp_origin_and_destination(const Vector3f& origin, const Vector3f& destination, bool terrain_alt)
 {
     // store origin and destination locations
+
     const Vector3f &curr_pos = _inav.get_position();
     _origin = origin;
     // TODO: if we use waypoint instead of survey we need to elimate this
@@ -227,10 +228,8 @@ bool AC_WPNav::set_wp_origin_and_destination(const Vector3f& origin, const Vecto
 
     Vector3f pos_delta = _destination - _origin; // minus x, y, z seperately
     // .length{ return norm(x,y,x)}
-    _track_length = pos_delta.length(); // get track length
-    // _track_length = _track_length + 200;
+    _track_length = pos_delta.length();// get track length
     _track_length_xy = safe_sqrt(sq(pos_delta.x)+sq(pos_delta.y));  // get horizontal track length (used to decide if we should update yaw)
-
     // calculate each axis' percentage of the total distance to the destination
     if (is_zero(_track_length)) {
         // avoid possible divide by zero
@@ -462,15 +461,17 @@ bool AC_WPNav::advance_wp_target_along_track(float dt)
         	}
     	}
     }
-
+    float track_length;
     // 16.do not let desired point go past the end of the track unless it's a fast waypoint
     if (_flags.fast_waypoint) {
-        _track_desired = constrain_float(_track_desired, 0, _track_length + 10.0f);
+        track_length =  _track_length -25.0f;
+        _track_desired = constrain_float(_track_desired, 0, track_length + WPNAV_WP_FAST_OVERSHOOT_MAX);
     } else {
+        track_length= _track_length;
         _track_desired = constrain_float(_track_desired, 0, _track_length);
     }
 
-    // 17.recalculate the desired position
+    // 17.recalculate the desired position 
     // _pos_delta_unit is a fix percentage per wp (how is this defined)
     // sitha: origin is the pos start takeoff 0.587cm, reach tf high 400cm, reach wp2 500cm, reach wp3 700cm
     // sitha: take off 4m if I set the _origin.z = 500 then the take off is 9m 
@@ -492,7 +493,7 @@ bool AC_WPNav::advance_wp_target_along_track(float dt)
     // 18.check if we've reached the waypoint
     if( !_flags.reached_destination ) {
         // gcs().send_text(MAV_SEVERITY_INFO, "__________tracklenght %f %f", _track_desired, _track_length);
-        if( _track_desired >= _track_length ) { // hit only once
+        if( _track_desired >= track_length ) { // hit only once
             // "fast" waypoints are complete once the intermediate point reaches the destination
             // gcs().send_text(MAV_SEVERITY_INFO, "_____________hit yyy");
             if (_flags.fast_waypoint) {
@@ -522,7 +523,7 @@ bool AC_WPNav::advance_wp_target_along_track(float dt)
     // gcs().send_text(MAV_SEVERITY_INFO, "sitha: => leash4 %i", _flags.reached_destination);
     // 19.update the target yaw if origin and destination are at least 2m apart horizontally
     if (_track_length_xy >= WPNAV_YAW_DIST_MIN) {
-        if (_pos_control.get_leash_xy() < WPNAV_YAW_DIST_MIN) {
+        if (_pos_control.get_leash_xy() < 20) {
             // if the leash is short (i.e. moving slowly) and destination is at least 2m horizontally, point along the segment from origin to destination
             set_yaw_cd(get_bearing_cd(_origin, _destination));
         } else {
@@ -533,7 +534,7 @@ bool AC_WPNav::advance_wp_target_along_track(float dt)
             }
         }
     }
-    gcs().send_text(MAV_SEVERITY_INFO, "__________tracklenght %f %f", _track_desired, _track_length);
+    // gcs().send_text(MAV_SEVERITY_INFO, "__________tracklenght %f %f", _track_desired, _track_length);
     // 20.successfully advanced along track
     return true;
 }
@@ -580,7 +581,7 @@ bool AC_WPNav::update_wpnav()
         _pos_control.freeze_ff_z();
     }
     // gcs().send_text(MAV_SEVERITY_INFO, "sitha: =>fast %i",  _flags.fast_waypoint);
-    // _pos_control.update_xy_controller();
+    _pos_control.update_xy_controller();
     check_wp_leash_length();
 
     _wp_last_update = AP_HAL::millis();
@@ -1088,7 +1089,7 @@ void AC_WPNav::calc_slow_down_distance(float speed_cms, float accel_cmss)
 	}
     // To-Do: should we use a combination of horizontal and vertical speeds?
     // To-Do: update this automatically when speed or acceleration is changed
-    _slow_down_dist = speed_cms * speed_cms / (1.5f*accel_cmss);
+    _slow_down_dist = speed_cms * speed_cms / (7.0f*accel_cmss);
 }
 
 /// get_slow_down_speed - returns target speed of target point based on distance from the destination (in cm)
