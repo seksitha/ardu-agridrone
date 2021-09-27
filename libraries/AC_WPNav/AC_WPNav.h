@@ -258,6 +258,10 @@ public:
     uint16_t readFlowSensor(uint8_t pin);
     bool loiter_state_after_mission_completed = false;
     bool break_auto_by_user_state = false;
+    AP_Float    _corect_coordinate_we;
+    AP_Float    _corect_coordinate_ns;
+    AP_Int8    _spray_all;
+    AP_Int8    _fast_turn;
 private:
     void irq_handler(uint8_t pin, bool pin_state, uint32_t timestamp);
     static AC_WPNav *_singleton;   
@@ -266,6 +270,7 @@ private:
         uint32_t pulse_width_us;
         uint32_t pulse_count1;
     } irq_state;
+
     
 protected:
     
@@ -333,8 +338,6 @@ protected:
     AP_Float    _wp_radius_cm;          // distance from a waypoint in cm that, when crossed, indicates the wp has been reached
     AP_Float    _wp_accel_cmss;          // horizontal acceleration in cm/s/s during missions
     AP_Float    _wp_accel_z_cmss;        // vertical acceleration in cm/s/s during missions
-    AP_Float    _corect_coordinate_we;
-    AP_Float    _corect_coordinate_ns;
 
     // waypoint controller internal variables
     uint32_t    _wp_last_update;        // time of last update_wpnav call

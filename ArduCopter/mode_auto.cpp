@@ -105,6 +105,146 @@ void ModeAuto::run()
     }
 }
 
+// start_command - this function will be called when the ap_mission lib wishes to start a new command
+// Sitha: in ModeAuto.h FUNCTOR_BIND_MEMBER(&ModeAuto::start_command, bool, const AP_Mission::Mission_Command &),
+bool ModeAuto::start_command(const AP_Mission::Mission_Command& cmd)
+{
+    copter.alert_empty_tank = false;
+    wp_nav->loiter_state_after_mission_completed = false;
+    
+    // To-Do: logging when new commands start/end
+    if (copter.should_log(MASK_LOG_CMD)) {
+        copter.logger.Write_Mission_Cmd(mission, cmd);
+    }
+    
+    if(cmd.index == 1){
+        cmd_16_index = 0;
+        copter.mission_16_index = 0;
+    }
+    // gcs().send_text(MAV_SEVERITY_INFO, "sitha: =>index %i", cmd.index);
+    switch(cmd.id) {
+    ///
+    /// navigation commands
+    ///
+    case MAV_CMD_NAV_TAKEOFF:                   // 22
+        do_takeoff(cmd);
+        break;
+
+    case MAV_CMD_NAV_WAYPOINT:                  // 16  Navigate to Waypoint
+        do_nav_wp(cmd);
+        break;
+
+    case MAV_CMD_NAV_LAND:              // 21 LAND to Waypoint
+        do_land(cmd);
+        break;
+
+    case MAV_CMD_NAV_LOITER_UNLIM:              // 17 Loiter indefinitely
+        do_loiter_unlimited(cmd);
+        break;
+
+    case MAV_CMD_NAV_LOITER_TURNS:              //18 Loiter N Times
+        do_circle(cmd);
+        break;
+
+    case MAV_CMD_NAV_LOITER_TIME:              // 19
+        do_loiter_time(cmd);
+        break;
+
+    case MAV_CMD_NAV_LOITER_TO_ALT:
+        do_loiter_to_alt(cmd);
+        break;
+
+    case MAV_CMD_NAV_RETURN_TO_LAUNCH:             //20
+        do_RTL();
+        break;
+
+    case MAV_CMD_NAV_SPLINE_WAYPOINT:           // 82  Navigate to Waypoint using spline
+        do_spline_wp(cmd);
+        break;
+
+    #if NAV_GUIDED == ENABLED
+        case MAV_CMD_NAV_GUIDED_ENABLE:             // 92  accept navigation commands from external nav computer
+            do_nav_guided_enable(cmd);
+            break;
+    #endif
+
+    case MAV_CMD_NAV_DELAY:                    // 93 Delay the next navigation command
+        do_nav_delay(cmd);
+        break;
+
+    case MAV_CMD_NAV_PAYLOAD_PLACE:              // 94 place at Waypoint
+        do_payload_place(cmd);
+        break;
+
+    //
+    // conditional commands
+    //
+    case MAV_CMD_CONDITION_DELAY:             // 112
+        do_wait_delay(cmd);
+        break;
+
+    case MAV_CMD_CONDITION_DISTANCE:             // 114
+        do_within_distance(cmd);
+        break;
+
+    case MAV_CMD_CONDITION_YAW:             // 115
+        do_yaw(cmd);
+        break;
+
+    ///
+    /// do commands
+    ///
+    case MAV_CMD_DO_CHANGE_SPEED:             // 178
+        do_change_speed(cmd);
+        break;
+
+    case MAV_CMD_DO_SET_HOME:             // 179
+        do_set_home(cmd);
+        break;
+
+    case MAV_CMD_DO_SET_ROI:                // 201
+        // point the copter and camera at a region of interest (ROI)
+        do_roi(cmd);
+        break;
+
+    case MAV_CMD_DO_MOUNT_CONTROL:          // 205
+        // point the camera to a specified angle
+        do_mount_control(cmd);
+        break;
+    
+    case MAV_CMD_DO_FENCE_ENABLE:
+#if AC_FENCE == ENABLED
+        if (cmd.p1 == 0) { //disable
+            copter.fence.enable(false);
+            gcs().send_text(MAV_SEVERITY_INFO, "Fence Disabled");
+        } else { //enable fence
+            copter.fence.enable(true);
+            gcs().send_text(MAV_SEVERITY_INFO, "Fence Enabled");
+        }
+#endif //AC_FENCE == ENABLED
+        break;
+
+#if NAV_GUIDED == ENABLED
+    case MAV_CMD_DO_GUIDED_LIMITS:                      // 220  accept guided mode limits
+        do_guided_limits(cmd);
+        break;
+#endif
+
+#if WINCH_ENABLED == ENABLED
+    case MAV_CMD_DO_WINCH:                             // Mission command to control winch
+        do_winch(cmd);
+        break;
+#endif
+
+    default:
+        // unable to use the command, allow the vehicle to try the next command
+        return false;
+    }
+
+    // always return success
+    return true;
+}
+
 // auto_loiter_start - initialises loitering in auto mode
 //  returns success/failure because this can be called by exit_mission
 bool ModeAuto::loiter_start()
@@ -393,145 +533,7 @@ void ModeAuto::payload_place_start()
 
 }
 
-// start_command - this function will be called when the ap_mission lib wishes to start a new command
-// in ModeAuto.h FUNCTOR_BIND_MEMBER(&ModeAuto::start_command, bool, const AP_Mission::Mission_Command &),
-bool ModeAuto::start_command(const AP_Mission::Mission_Command& cmd)
-{
-    copter.alert_empty_tank = false;
-    wp_nav->loiter_state_after_mission_completed = false;
-    
-    // To-Do: logging when new commands start/end
-    if (copter.should_log(MASK_LOG_CMD)) {
-        copter.logger.Write_Mission_Cmd(mission, cmd);
-    }
-    
-    if(cmd.index == 1){
-        cmd_16_index = 0;
-        copter.mission_16_index = 0;
-    }
-    // gcs().send_text(MAV_SEVERITY_INFO, "sitha: =>index %i", cmd.index);
-    switch(cmd.id) {
-    ///
-    /// navigation commands
-    ///
-    case MAV_CMD_NAV_TAKEOFF:                   // 22
-        do_takeoff(cmd);
-        break;
 
-    case MAV_CMD_NAV_WAYPOINT:                  // 16  Navigate to Waypoint
-        do_nav_wp(cmd);
-        break;
-
-    case MAV_CMD_NAV_LAND:              // 21 LAND to Waypoint
-        do_land(cmd);
-        break;
-
-    case MAV_CMD_NAV_LOITER_UNLIM:              // 17 Loiter indefinitely
-        do_loiter_unlimited(cmd);
-        break;
-
-    case MAV_CMD_NAV_LOITER_TURNS:              //18 Loiter N Times
-        do_circle(cmd);
-        break;
-
-    case MAV_CMD_NAV_LOITER_TIME:              // 19
-        do_loiter_time(cmd);
-        break;
-
-    case MAV_CMD_NAV_LOITER_TO_ALT:
-        do_loiter_to_alt(cmd);
-        break;
-
-    case MAV_CMD_NAV_RETURN_TO_LAUNCH:             //20
-        do_RTL();
-        break;
-
-    case MAV_CMD_NAV_SPLINE_WAYPOINT:           // 82  Navigate to Waypoint using spline
-        do_spline_wp(cmd);
-        break;
-
-#if NAV_GUIDED == ENABLED
-    case MAV_CMD_NAV_GUIDED_ENABLE:             // 92  accept navigation commands from external nav computer
-        do_nav_guided_enable(cmd);
-        break;
-#endif
-
-    case MAV_CMD_NAV_DELAY:                    // 93 Delay the next navigation command
-        do_nav_delay(cmd);
-        break;
-
-    case MAV_CMD_NAV_PAYLOAD_PLACE:              // 94 place at Waypoint
-        do_payload_place(cmd);
-        break;
-
-    //
-    // conditional commands
-    //
-    case MAV_CMD_CONDITION_DELAY:             // 112
-        do_wait_delay(cmd);
-        break;
-
-    case MAV_CMD_CONDITION_DISTANCE:             // 114
-        do_within_distance(cmd);
-        break;
-
-    case MAV_CMD_CONDITION_YAW:             // 115
-        do_yaw(cmd);
-        break;
-
-    ///
-    /// do commands
-    ///
-    case MAV_CMD_DO_CHANGE_SPEED:             // 178
-        do_change_speed(cmd);
-        break;
-
-    case MAV_CMD_DO_SET_HOME:             // 179
-        do_set_home(cmd);
-        break;
-
-    case MAV_CMD_DO_SET_ROI:                // 201
-        // point the copter and camera at a region of interest (ROI)
-        do_roi(cmd);
-        break;
-
-    case MAV_CMD_DO_MOUNT_CONTROL:          // 205
-        // point the camera to a specified angle
-        do_mount_control(cmd);
-        break;
-    
-    case MAV_CMD_DO_FENCE_ENABLE:
-#if AC_FENCE == ENABLED
-        if (cmd.p1 == 0) { //disable
-            copter.fence.enable(false);
-            gcs().send_text(MAV_SEVERITY_INFO, "Fence Disabled");
-        } else { //enable fence
-            copter.fence.enable(true);
-            gcs().send_text(MAV_SEVERITY_INFO, "Fence Enabled");
-        }
-#endif //AC_FENCE == ENABLED
-        break;
-
-#if NAV_GUIDED == ENABLED
-    case MAV_CMD_DO_GUIDED_LIMITS:                      // 220  accept guided mode limits
-        do_guided_limits(cmd);
-        break;
-#endif
-
-#if WINCH_ENABLED == ENABLED
-    case MAV_CMD_DO_WINCH:                             // Mission command to control winch
-        do_winch(cmd);
-        break;
-#endif
-
-    default:
-        // unable to use the command, allow the vehicle to try the next command
-        return false;
-    }
-
-    // always return success
-    return true;
-}
 
 // exit_mission - function that is called once the mission completes
 void ModeAuto::exit_mission()
@@ -782,9 +784,12 @@ void ModeAuto::wp_run() // this is a low frequency loop
     if (auto_yaw.mode() == AUTO_YAW_HOLD) {
         // roll & pitch from waypoint controller, yaw rate from pilot
         attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(wp_nav->get_roll(), wp_nav->get_pitch(), target_yaw_rate);
+        
     } else {
         // roll, pitch from waypoint controller, yaw heading from auto_heading()
+       // attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(wp_nav->get_roll(), wp_nav->get_pitch(), -1000.0f);
         attitude_control->input_euler_angle_roll_pitch_yaw(wp_nav->get_roll(), wp_nav->get_pitch(), auto_yaw.yaw(), true);
+        //copter.set_yaw(45.0f,100.0f,0,true);
     }
 }
 
@@ -1130,16 +1135,20 @@ void ModeAuto::do_nav_wp(const AP_Mission::Mission_Command& cmd)
     loiter_time_max = cmd.p1;
     cmd_16_index = cmd_16_index + 1; // cmd_16_index is 0 at start so need to pluse one
     copter.mission_16_index = cmd_16_index;
-
-    if (cmd_16_index % 2 == 0 && copter.mission_16_index > 1 ) {
+    if(wp_nav->_spray_all){
         copter.set_pump_spinner_pwm(true);
-    } 
-    if (cmd_16_index % 2 != 0)  {
-        copter.set_pump_spinner_pwm(false);
+    }else{
+        if (cmd_16_index % 2 == 0 && copter.mission_16_index > 1 ) {
+        copter.set_pump_spinner_pwm(true);
+        } 
+        if (cmd_16_index % 2 != 0)  {
+            copter.set_pump_spinner_pwm(false);
+        }
     }
     
+    
     // Set wp navigation target
-    wp_start(target_loc);
+    wp_start(target_loc); // this will set _mode = Auto_WP then call wp-run
     
     // if no delay as well as not final waypoint set the waypoint as "fast"
     AP_Mission::Mission_Command temp_cmd;
@@ -1156,15 +1165,20 @@ void ModeAuto::do_nav_wp(const AP_Mission::Mission_Command& cmd)
             case MAV_CMD_NAV_SPLINE_WAYPOINT:
                 // if next command's lat, lon is specified then do not slowdown at this waypoint
                 if ((temp_cmd.content.location.lat != 0) || (temp_cmd.content.location.lng != 0)) {
-                    if(cmd.index > 2 && cmd.index % 2 == 0 ){
+                    if(wp_nav->_fast_turn){
                         fast_waypoint = true;
+                    }else{
+                        // gcs().send_text(MAV_SEVERITY_INFO,"hit");
+                        // Sitha: I change this to false to let the copter stay at the exact corner
+                        // but this cause the spray too much at corner. 
+                        // Put it to true cause the copter stop spraying too early because the flag reach waypoint is about 10m
+                        // wp_radius did not help flag the reach but work for the turn corner
+                        // https://github.com/ArduPilot/ardupilot/issues/6194 look at Randy suggestion
+                        // that will make calc_slow_down_distance()
+                        if(cmd.index > 2 && cmd.index % 2 == 0 ){
+                            fast_waypoint = true;
+                        }
                     }
-                    // Sitha: I change this to false to let the copter stay at the exact corner
-                    // but this cause the spray too much at corner. 
-                    // Put it to true cause the copter stop spraying too early because the flag reach waypoint is about 10m
-                    // wp_radius did not help flag the reach but work for the turn corner
-                    // https://github.com/ArduPilot/ardupilot/issues/6194 look at Randy suggestion
-                    // that will make calc_slow_down_distance()
                 }
                 break;
             case MAV_CMD_NAV_RETURN_TO_LAUNCH:

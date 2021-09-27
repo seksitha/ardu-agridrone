@@ -1,3 +1,10 @@
+// when pilot switch to auto => 
+// mission.start_or_resume => auto.start_command => auto.do_nav_wp => auto.wp_start => auto.wp_run
+
+
+
+
+
 bool ModeAuto::init(bool ignore_checks)
 {
     if (mission.num_commands() > 1 || ignore_checks) {
@@ -29,6 +36,7 @@ bool ModeAuto::init(bool ignore_checks)
     }
 }
 void ModeAuto::run() // command 16 will call wp_run()
+
 void ModeAuto::wp_run() // this is a low frequency loop
 {
     

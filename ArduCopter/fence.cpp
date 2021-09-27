@@ -61,7 +61,7 @@ void Copter::fence_check()
                     case AC_FENCE_ACTION_BRAKE:
                         // Try Brake, if that fails Land
                         if (!set_mode(Mode::Number::BRAKE, ModeReason::FENCE_BREACHED)) {
-                            set_mode(Mode::Number::LAND, ModeReason::FENCE_BREACHED);
+                            set_mode(Mode::Number::LOITER, ModeReason::FENCE_BREACHED);
                         }
                         break;
                     }

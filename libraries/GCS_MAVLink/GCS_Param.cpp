@@ -35,6 +35,8 @@ void
 GCS_MAVLINK::queued_param_send()
 {
     // send parameter async replies
+    
+
     uint8_t async_replies_sent_count = send_parameter_async_replies();
 
     const uint32_t tnow = AP_HAL::millis();
@@ -71,7 +73,7 @@ GCS_MAVLINK::queued_param_send()
     while (count && _queued_parameter != nullptr) {
         char param_name[AP_MAX_NAME_SIZE];
         _queued_parameter->copy_name_token(_queued_parameter_token, param_name, sizeof(param_name), true);
-
+        // gcs().send_text(MAV_SEVERITY_INFO,"param_read1 ");
         mavlink_msg_param_value_send(
             chan,
             param_name,
@@ -304,9 +306,11 @@ void GCS_MAVLINK::handle_param_set(const mavlink_message_t &msg)
 
 void GCS_MAVLINK::send_parameter_value(const char *param_name, ap_var_type param_type, float param_value)
 {
+    // gcs().send_text(MAV_SEVERITY_INFO,"param_read");
     if (!HAVE_PAYLOAD_SPACE(chan, PARAM_VALUE)) {
         return;
     }
+    // gcs().send_text(MAV_SEVERITY_INFO,"param_read2 %i",AP_HAL::millis());
     mavlink_msg_param_value_send(
         chan,
         param_name,
@@ -321,6 +325,7 @@ void GCS_MAVLINK::send_parameter_value(const char *param_name, ap_var_type param
  */
 void GCS::send_parameter_value(const char *param_name, ap_var_type param_type, float param_value)
 {
+    
     mavlink_param_value_t packet{};
     const uint8_t to_copy = MIN(ARRAY_SIZE(packet.param_id), strlen(param_name));
     memcpy(packet.param_id, param_name, to_copy);
@@ -395,7 +400,6 @@ void GCS_MAVLINK::param_io_timer(void)
 uint8_t GCS_MAVLINK::send_parameter_async_replies()
 {
     uint8_t async_replies_sent_count = 0;
-
     while (async_replies_sent_count < 5) {
         struct pending_param_reply reply;
         if (!param_replies.peek(reply)) {
@@ -413,7 +417,7 @@ uint8_t GCS_MAVLINK::send_parameter_async_replies()
             return async_replies_sent_count;
         }
         reserve_param_space_start_ms = saved_reserve_param_space_start_ms;
-
+        // gcs().send_text(MAV_SEVERITY_INFO,"param_read3 %i",AP_HAL::millis());
         mavlink_msg_param_value_send(
             reply.chan,
             reply.param_name,
@@ -437,6 +441,7 @@ void GCS_MAVLINK::handle_common_param_message(const mavlink_message_t &msg)
 {
     switch (msg.msgid) {
     case MAVLINK_MSG_ID_PARAM_REQUEST_LIST:
+        gcs().send_text(MAV_SEVERITY_INFO,"param_list");
         handle_param_request_list(msg);
         break;
     case MAVLINK_MSG_ID_PARAM_SET:

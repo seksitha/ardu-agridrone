@@ -12,7 +12,6 @@
 class AC_Loiter
 {
 public:
-
     /// Constructor
     AC_Loiter(const AP_InertialNav& inav, const AP_AHRS_View& ahrs, AC_PosControl& pos_control, const AC_AttitudeControl& attitude_control);
 

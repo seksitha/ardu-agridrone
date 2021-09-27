@@ -310,7 +310,7 @@ bool AC_Fence::check_fence_circle()
 uint8_t AC_Fence::check()
 {
     uint8_t ret = 0;
-
+    // gcs().send_text(MAV_SEVERITY_INFO,"fench %i",AP_HAL::millis());
     // return immediately if disabled
     if (!_enabled || !_enabled_fences) {
         return 0;
@@ -350,6 +350,7 @@ uint8_t AC_Fence::check()
 bool AC_Fence::check_destination_within_fence(const Location& loc)
 {
     // Altitude fence check
+    
     if ((get_enabled_fences() & AC_FENCE_TYPE_ALT_MAX)) {
         int32_t alt_above_home_cm;
         if (loc.get_alt_cm(Location::AltFrame::ABOVE_HOME, alt_above_home_cm)) {

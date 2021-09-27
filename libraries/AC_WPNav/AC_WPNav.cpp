@@ -74,6 +74,8 @@ const AP_Param::GroupInfo AC_WPNav::var_info[] = {
     // @User: Standard
     AP_GROUPINFO("COOR_WE",   7, AC_WPNav, _corect_coordinate_we, WPNAV_COORDINATE_WE),
     AP_GROUPINFO("COOR_NS",   8, AC_WPNav, _corect_coordinate_ns, WPNAV_COORDINATE_NS),
+    AP_GROUPINFO("SPRAY_ALL",   9, AC_WPNav, _spray_all, 0),
+    AP_GROUPINFO("FAST_TURN",   11, AC_WPNav, _fast_turn, 0),
 
     AP_GROUPEND
 };

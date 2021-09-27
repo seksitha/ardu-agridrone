@@ -74,7 +74,7 @@
  */
 
 #include "Copter.h"
-
+#include <math.h>
 #define FORCE_VERSION_H_INCLUDE
 #include "version.h"
 #undef FORCE_VERSION_H_INCLUDE
@@ -567,9 +567,15 @@ void Copter::one_hz_loop()
             current_mission_waypoint_finish_point.y == new_mission_finish_point.y &&
             mode_auto.mission.num_commands() < current_mission_length )
         {
-            gcs().send_text(MAV_SEVERITY_INFO, "sitha: => _______resume success");
-            new_mission_waypoint_2.x = mission_breakpoint.lat;
-            new_mission_waypoint_2.y = mission_breakpoint.lng;
+            gcs().send_text(MAV_SEVERITY_INFO, "sitha=> resume success");
+            float R = 6378137.00000000f;
+            float dlat = wp_nav->_corect_coordinate_ns/R;
+            float dlon = 4.00000000f/(R*cosf(3.14150000f*(float)mission_breakpoint.lat/10000000/180.00000000f));
+            float correct_breakpoint_lat = ((float)mission_breakpoint.lat/10000000-(dlat*180/3.14150000f));
+            float correct_breakpoint_lng = ((float)mission_breakpoint.lng/10000000)-((dlon*180/3.14150000f));
+            new_mission_waypoint_2.x = int32_t(correct_breakpoint_lat*10000000);
+            new_mission_waypoint_2.y = (int32_t)(correct_breakpoint_lng*10000000);
+    
             // current_mission_index include takeoff, mission_16_index only cmd_16
             if (copter.mission_16_index % 2 != 0){ // only happen when pilot stop at even wapoint
                 /*TODO (Done) make sure the number 2 wp is spray point not turn point and not take off command*/
