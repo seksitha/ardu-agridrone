@@ -217,12 +217,12 @@ bool AC_WPNav::set_wp_origin_and_destination(const Vector3f& origin, const Vecto
     // destination.x = destination.x + 100;
     _destination = destination;
     // gcs().send_text(MAV_SEVERITY_INFO, "sitha: =>index %i", copter.mode_auto.mission.get_current_nav_index());
-    if(copter.mode_auto.mission.get_current_nav_index() > 1 && (copter.get_mode()==3 || copter.get_mode() == 4) ){
+    if(copter.mode_auto.mission.get_current_nav_index() >= 2 && (copter.get_mode()==3 || copter.get_mode() == 4) ){
         _destination.y = destination.y+(_corect_coordinate_we * 100);
         _destination.x = destination.x+(_corect_coordinate_ns * 100);
     }
-    
-    _destination.z = _flags_change_alt_by_pilot ? curr_pos.z : _destination.z;
+    // This code ensure the altitude changed stay the same through out the mssion
+    _destination.z = _flags_change_alt_by_pilot ? curr_pos.z : destination.z;
     // reset clime alt and wait for pilot throttle cmd again
     _pilot_clime_cm = 0.0f;
     _terrain_alt = terrain_alt;
@@ -326,7 +326,7 @@ bool AC_WPNav::advance_wp_target_along_track(float dt)
     if (_terrain_alt && !get_terrain_offset(terr_offset)) {
         return false;
     }
-
+    
     /* BREAKPOINT resuming when empty tank*/
     if(copter.mode_auto.mission.state() != 0){ // we don't want code to run at RTL because it use wpnav controller too
         if(copter.mode_auto.mission.get_current_nav_index() == 1){
@@ -345,14 +345,17 @@ bool AC_WPNav::advance_wp_target_along_track(float dt)
     
     /* ALT: Altitude*/
     int32_t throttle_val = copter.channel_throttle->get_radio_in();
+    
     // positive throttle
-    if (throttle_val > 1550 && _flags_change_alt_by_pilot ){
+    if (throttle_val > 1550 ){
+        if(!_flags_change_alt_by_pilot) _flags_change_alt_by_pilot = true;
         // test with SITL carefull with throttle not come back to 1500
         // limit height 20m up only Test with and next waypoint clime rate is set to 0 and if throttle not 1500 it will keep going up
         _pilot_clime_cm < 2000 ? _pilot_clime_cm = (_pilot_clime_cm + ((float)throttle_val/5000)) : _pilot_clime_cm;
     }
     // negative throttle
-    else if (throttle_val < 1450 && _flags_change_alt_by_pilot  && throttle_val > 1000 /* SITL start at rc 3 1000*/ ){
+    else if (throttle_val < 1450  && throttle_val > 1000 /* SITL start at rc 3 1000*/ ){
+        if(!_flags_change_alt_by_pilot) _flags_change_alt_by_pilot = true;
         // limit height -10monly
         // test with SITL carefull with throttle not come back to 1500 and next waypoint clime rate is set to 0 and if throttle not 1500 it will keep going down
         _pilot_clime_cm = (_pilot_clime_cm - 0.3);
@@ -369,9 +372,10 @@ bool AC_WPNav::advance_wp_target_along_track(float dt)
     const Vector3f &curr_pos = _inav.get_position();
     // _origin.x = _origin.x+200;
     Vector3f curr_delta = (curr_pos - Vector3f(0,0,terr_offset)) - _origin;
+    
     if (_flags_change_alt_by_pilot){
         curr_delta.z -= _pilot_clime_cm;
-        // gcs().send_text(MAV_SEVERITY_INFO, "sitha: =>hit %f", _pos_delta_unit.z);
+        gcs().send_text(MAV_SEVERITY_INFO, "sitha: =>change alt %f", _destination.z);
     }
     
     // 4.calculate how far along the track we are in cm?
@@ -450,6 +454,7 @@ bool AC_WPNav::advance_wp_target_along_track(float dt)
             _limited_speed_xy_cms = constrain_float(_limited_speed_xy_cms,speed_along_track-linear_velocity,speed_along_track+linear_velocity);
         }
     }
+    
     // 15.advance the current target
     if (!reached_leash_limit) {
     	_track_desired += _limited_speed_xy_cms * dt;
@@ -474,10 +479,6 @@ bool AC_WPNav::advance_wp_target_along_track(float dt)
     }
 
     // 17.recalculate the desired position 
-    // _pos_delta_unit is a fix percentage per wp (how is this defined)
-    // sitha: origin is the pos start takeoff 0.587cm, reach tf high 400cm, reach wp2 500cm, reach wp3 700cm
-    // sitha: take off 4m if I set the _origin.z = 500 then the take off is 9m 
-    // _origin.z=200;
 
     Vector3f final_target = _origin + _pos_delta_unit * _track_desired; // only calculate xy
     // convert final_target.z to altitude above the ekf origin
@@ -487,37 +488,25 @@ bool AC_WPNav::advance_wp_target_along_track(float dt)
     }
     _pos_control.set_pos_target(final_target);
 
-    // int32_t throttle_val = copter.channel_throttle->get_radio_in();
-    // if (throttle_val > 1020 && throttle_val < 2000){
-    //     _pos_control.set_alt_target_from_climb_rate(500, dt, false);
-    // }
 
     // 18.check if we've reached the waypoint
     if( !_flags.reached_destination ) {
-        // gcs().send_text(MAV_SEVERITY_INFO, "__________tracklenght %f %f", _track_desired, _track_length);
         if( _track_desired >= track_length ) { // hit only once
             // "fast" waypoints are complete once the intermediate point reaches the destination
-            // gcs().send_text(MAV_SEVERITY_INFO, "_____________hit yyy");
             if (_flags.fast_waypoint) {
-                // Vector3f dist_to_dest = (curr_pos - Vector3f(0,0,terr_offset)) - _destination;
-                // if (_flags_change_alt_by_pilot){
-                //     dist_to_dest.z -= _pilot_clime_cm;
-                // }
+                Vector3f dist_to_dest = (curr_pos - Vector3f(0,0,terr_offset)) - _destination;
+                if (_flags_change_alt_by_pilot){
+                    dist_to_dest.z -= _pilot_clime_cm;
+                }
                 _flags.reached_destination = true;
-                // gcs().send_text(MAV_SEVERITY_INFO, "____¿se_________hit flags");
-                
-                _flags_change_alt_by_pilot = true;
             }else{
-                // regular waypoints also require the copter to be within the waypoint radius
-                // gcs().send_text(MAV_SEVERITY_INFO, "_____________hit no");                                                                                                                                  
+                // regular waypoints also require the copter to be within the waypoint radius                                                                                                                                 
                 Vector3f dist_to_dest = (curr_pos - Vector3f(0,0,terr_offset)) - _destination;
                 if (_flags_change_alt_by_pilot){
                     dist_to_dest.z -= _pilot_clime_cm;
                 }
                 if( dist_to_dest.length() <= _wp_radius_cm ) {
-                    _flags_change_alt_by_pilot = true;
                     _flags.reached_destination = true;
-                    // allow change altitude after the takeoff 
                 }
             }
         }
@@ -1142,7 +1131,7 @@ void AC_WPNav::wp_speed_update(float dt)
     // flag that wp leash must be recalculated
     _flags.recalc_wp_leash = true;
 }
-void AC_WPNav::reset_param_on_start_mission(){
+void AC_WPNav::reset_param_on_start_mission(){ // in case the drone land and new mission?
     _flags_change_alt_by_pilot =false;
     _pilot_clime_cm = 0.0f;
 }

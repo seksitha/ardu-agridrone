@@ -387,7 +387,9 @@ void Copter::ten_hz_logging_loop()
     // read value of level sensor
     if (RC_Channels::get_radio_in(9) > 1500){
         //uint16_t flow_val = wp_nav->readFlowSensor(60);
-        uint16_t flow_val = hal.gpio->read(60);
+        uint16_t flow_val = hal.gpio->read(60); // nano  v5
+        // uint16_t flow_val = hal.gpio->read(54); //       v5+
+
         if (sensor_loop_index >= 25){
             gcs().send_text(MAV_SEVERITY_INFO, "sensor val %i", flow_val);
             sensor_loop_index = 0;
@@ -412,7 +414,8 @@ void Copter::ten_hz_logging_loop()
         // if empty tank stop copter
         if (mission_timer_not_to_monitor_flow_at_start_waypoint >= delay_monitor_flow && RC_Channels::get_radio_in(6) > 1400 ){
         // if (mission_timer_not_to_monitor_flow_at_start_waypoint >= 20 && copter.mission_16_index % 2 == 0){
-            uint16_t flow_val = hal.gpio->read(60);
+            uint16_t flow_val = hal.gpio->read(60); // nano  v5
+            // uint16_t flow_val = hal.gpio->read(54); //       v5+
             flow_value = flow_value + flow_val ;
             // flow_value =  flow_value + flow_val;
             uint8_t loop_counter_max = 4;
@@ -517,7 +520,8 @@ void Copter::one_hz_loop()
     // switch the pump on by RC
     if (copter.get_mode()!=3 /*not auto*/ && chan_pump && chan_spinner && pump_off_on_boot){
         if (RC_Channels::get_radio_in(6) > 1500){
-            uint16_t flow_val = hal.gpio->read(60); //wp_nav->readFlowSensor(60);
+            uint16_t flow_val = hal.gpio->read(60); // nano  v5
+            // uint16_t flow_val = hal.gpio->read(54); //       v5+
             if(flow_val == 0){
                 set_pump_spinner_pwm(true);
             }else{
@@ -589,23 +593,25 @@ void Copter::one_hz_loop()
             mode_auto.mission.mission_uploaded_success_state = false;
         }
     }
+    
     // MISSION break by user and resume / this prevent user fly to somewhere and decide to resume so it resume to breakpoint
-    if(copter.current_mission_index > 2){
-        wp_nav->break_auto_by_user_state = true;
-    }
-    if (motors->armed() && copter.get_mode()!=3 /*not equal auto*/
-        && mode_auto.mission.state() == 0 
-        && current_mission_index >= 3 && wp_nav->break_auto_by_user_state == true)
-    {
-        // gcs().send_text(MAV_SEVERITY_INFO, "sitha: => _________breakpoint success");
-        mavlink_mission_item_int_t current_waypoint ;
-        mode_auto.mission.get_item(current_mission_index-1, current_waypoint);
-        current_waypoint.x = mission_breakpoint.lat;
-        current_waypoint.y = mission_breakpoint.lng;
-        mode_auto.mission.set_item(current_mission_index-1, current_waypoint);
-        mode_auto.mission.set_current_cmd(current_mission_index-1);
-        wp_nav->break_auto_by_user_state = false;
-    }
+    // if(copter.current_mission_index > 2){
+    //     wp_nav->break_auto_by_user_state = true;
+    // }
+    // if (motors->armed() && copter.get_mode()!=3 /*not equal auto*/
+    //     && mode_auto.mission.state() == 0 
+    //     && current_mission_index >= 3 && wp_nav->break_auto_by_user_state == true)
+    // {
+    //     // gcs().send_text(MAV_SEVERITY_INFO, "sitha: => _________breakpoint success");
+    //     mavlink_mission_item_int_t current_waypoint ;
+    //     mode_auto.mission.get_item(current_mission_index-1, current_waypoint);
+    //     current_waypoint.x = mission_breakpoint.lat;
+    //     current_waypoint.y = mission_breakpoint.lng;
+    //     mode_auto.mission.set_item(current_mission_index-1, current_waypoint);
+    //     mode_auto.mission.set_current_cmd(current_mission_index-1);
+    //     wp_nav->break_auto_by_user_state = false;
+    // }
+
     // gcs().send_text(MAV_SEVERITY_INFO, "sitha: =>mission_16_index %i", mission_16_index);
     // gcs().send_text(MAV_SEVERITY_INFO, "sitha: => c_le %i", copter.current_mission_index);
     
@@ -617,6 +623,7 @@ void Copter::one_hz_loop()
             mode_auto.cmd_16_index= 0;
             current_mission_index = 0;
             wp_nav->break_auto_by_user_state = false;
+            wp_nav->reset_param_on_start_mission();
         }
     }
     // MISSIONBREAKPOINT code end here.

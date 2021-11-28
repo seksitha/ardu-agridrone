@@ -8,9 +8,14 @@
     "test": "tests"
   },
   "scripts": {
-    "start": "sim_vehicle.py -v ArduCopter -j 2 --moddebug=3 --custom-location=13.03865,103.29179,0,0",
+    "start": "sim_vehicle.py -v ArduCopter -j 2 --moddebug=3 --custom-location=13.0377046,103.2913458,0,0",
+    "start-1": "sim_vehicle.py -v ArduCopter -j 2 --moddebug=3 --custom-location=13.8014443,102.7523941,0,0 --instance 1",
+    "start-2": "sim_vehicle.py -v ArduCopter -j 2 --moddebug=3 --custom-location=13.8014400,102.7523900,0,0 --instance 2",
     "udp": "sim_vehicle.py -v ArduCopter -j 2 --moddebug=3 --out=127.0.0.1:14555 --custom-location=13.03865,103.29179,0,0",
-    "build":"./waf configure --board CUAVv5Nano && ./waf copter"
+    "build":"./waf configure --board CUAVv5Nano && ./waf copter",
+    "list":"./waf list_boards",
+    "build-v5+":"./waf configure --board CUAVv5 && ./waf copter",
+    "build-v3":"./waf configure --board fmuv3 && ./waf copter"
   },
   "repository": {
     "type": "git",

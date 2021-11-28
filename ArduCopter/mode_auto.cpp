@@ -302,7 +302,7 @@ void ModeAuto::takeoff_start(const Location& dest_loc)
         // fall back to altitude above current altitude
         alt_target = copter.current_loc.alt + dest.alt;
     }
-
+    gcs().send_text(MAV_SEVERITY_INFO,"alt %i",alt_target);
     // sanity check target
     if (alt_target < copter.current_loc.alt) {
         dest.set_alt_cm(copter.current_loc.alt, Location::AltFrame::ABOVE_HOME);
@@ -1095,7 +1095,7 @@ Location ModeAuto::terrain_adjusted_location(const AP_Mission::Mission_Command& 
 // do_takeoff - initiate takeoff navigation command
 void ModeAuto::do_takeoff(const AP_Mission::Mission_Command& cmd)
 {
-    copter.wp_nav->reset_param_on_start_mission(); // sitha code
+    // copter.wp_nav->reset_param_on_start_mission(); // sitha code
     // Set wp navigation target to safe altitude above current position
     takeoff_start(cmd.content.location);
 }
@@ -1136,7 +1136,7 @@ void ModeAuto::do_nav_wp(const AP_Mission::Mission_Command& cmd)
     cmd_16_index = cmd_16_index + 1; // cmd_16_index is 0 at start so need to pluse one
     copter.mission_16_index = cmd_16_index;
     if(wp_nav->_spray_all){
-        copter.set_pump_spinner_pwm(true);
+        if(cmd_16_index >1) copter.set_pump_spinner_pwm(true);
     }else{
         if (cmd_16_index % 2 == 0 && copter.mission_16_index > 1 ) {
         copter.set_pump_spinner_pwm(true);
@@ -1531,7 +1531,7 @@ void ModeAuto::do_payload_place(const AP_Mission::Mission_Command& cmd)
 void ModeAuto::do_RTL(void)
 {
     // start rtl in auto flight mode
-    copter.wp_nav->reset_param_on_start_mission();
+    // copter.wp_nav->reset_param_on_start_mission();
     rtl_start();
 
 }
