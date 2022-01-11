@@ -159,8 +159,12 @@ public:
     /// get_wp_distance_to_destination - get horizontal distance to destination in cm
     virtual float get_wp_distance_to_destination() const;
 
+    float get_traveled_distance() const;
+
     /// get_bearing_to_destination - get bearing to next waypoint in centi-degrees
     virtual int32_t get_wp_bearing_to_destination() const;
+
+    int32_t get_wp_bearing_to_target(const Location& destination);
 
     /// reached_destination - true when we have come within RADIUS cm of the waypoint
     virtual bool reached_wp_destination() const { return _flags.reached_destination; }
@@ -262,6 +266,15 @@ public:
     AP_Float    _corect_coordinate_ns;
     AP_Int8    _spray_all;
     AP_Int8    _fast_turn;
+    AP_Int8    _sensor_pin;
+    AP_Int32   _pwm_nozzle;
+    AP_Int32   _pwm_pump;
+    AP_Int8    _has_oaradar;
+    float      traveled_distance;
+    Location    origin_for_breakpoint;
+    int32_t wp_bearing;
+    AP_Int8    _radio_type;
+
 private:
     void irq_handler(uint8_t pin, bool pin_state, uint32_t timestamp);
     static AC_WPNav *_singleton;   

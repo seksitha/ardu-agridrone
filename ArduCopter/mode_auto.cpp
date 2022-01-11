@@ -302,7 +302,7 @@ void ModeAuto::takeoff_start(const Location& dest_loc)
         // fall back to altitude above current altitude
         alt_target = copter.current_loc.alt + dest.alt;
     }
-    gcs().send_text(MAV_SEVERITY_INFO,"alt %i",alt_target);
+    // gcs().send_text(MAV_SEVERITY_INFO,"alt %i",alt_target);
     // sanity check target
     if (alt_target < copter.current_loc.alt) {
         dest.set_alt_cm(copter.current_loc.alt, Location::AltFrame::ABOVE_HOME);
@@ -1133,28 +1133,37 @@ void ModeAuto::do_nav_wp(const AP_Mission::Mission_Command& cmd)
     loiter_time = 0;
     // this is the delay, stored in seconds
     loiter_time_max = cmd.p1;
-    cmd_16_index = cmd_16_index + 1; // cmd_16_index is 0 at start so need to pluse one
+    if(!wp_nav->break_auto_by_user_state) {
+        cmd_16_index = cmd_16_index + 1; // cmd_16_index is 0 at start so need to pluse one
+    }
     copter.mission_16_index = cmd_16_index;
+    // gcs().send_text(MAV_SEVERITY_INFO, "_______index %i missionState %i",cmd_16_index, mission.state());
     if(wp_nav->_spray_all){
         if(cmd_16_index >1) copter.set_pump_spinner_pwm(true);
     }else{
-        if (cmd_16_index % 2 == 0 && copter.mission_16_index > 1 ) {
-        copter.set_pump_spinner_pwm(true);
+        if (cmd_16_index % 2 == 0 && copter.mission_16_index > 1 && mission.state()==1 ) {
+            copter.set_pump_spinner_pwm(true);
         } 
-        if (cmd_16_index % 2 != 0)  {
+        if (cmd_16_index % 2 != 0 || mission.state()==0)  {
             copter.set_pump_spinner_pwm(false);
         }
     }
-    
-    
+
+    wp_nav->break_auto_by_user_state = false;
+
     // Set wp navigation target
     wp_start(target_loc); // this will set _mode = Auto_WP then call wp-run
     
     // if no delay as well as not final waypoint set the waypoint as "fast"
-    AP_Mission::Mission_Command temp_cmd;
-    bool fast_waypoint = false;
-    if (loiter_time_max == 0 && mission.get_next_nav_cmd(cmd.index+1, temp_cmd)) {
+    AP_Mission::Mission_Command temp_cmd2;
+    if(mission.get_next_nav_cmd(cmd.index-1, temp_cmd2)){
+        wp_nav->origin_for_breakpoint.lat = temp_cmd2.content.location.lat;
+        wp_nav->origin_for_breakpoint.lng = temp_cmd2.content.location.lng;
+    }
 
+    bool fast_waypoint = false;
+    AP_Mission::Mission_Command temp_cmd;
+    if (loiter_time_max == 0 && mission.get_next_nav_cmd(cmd.index+1, temp_cmd)) {
         // whether vehicle should stop at the target position depends upon the next command
         switch (temp_cmd.id) {
             case MAV_CMD_NAV_WAYPOINT:
@@ -1166,7 +1175,9 @@ void ModeAuto::do_nav_wp(const AP_Mission::Mission_Command& cmd)
                 // if next command's lat, lon is specified then do not slowdown at this waypoint
                 if ((temp_cmd.content.location.lat != 0) || (temp_cmd.content.location.lng != 0)) {
                     if(wp_nav->_fast_turn){
-                        fast_waypoint = true;
+                        if(cmd.index > 2 && cmd.index % 2 == 0 ){
+                            fast_waypoint = true;
+                        }
                     }else{
                         // gcs().send_text(MAV_SEVERITY_INFO,"hit");
                         // Sitha: I change this to false to let the copter stay at the exact corner
@@ -1175,9 +1186,10 @@ void ModeAuto::do_nav_wp(const AP_Mission::Mission_Command& cmd)
                         // wp_radius did not help flag the reach but work for the turn corner
                         // https://github.com/ArduPilot/ardupilot/issues/6194 look at Randy suggestion
                         // that will make calc_slow_down_distance()
-                        if(cmd.index > 2 && cmd.index % 2 == 0 ){
-                            fast_waypoint = true;
-                        }
+                        // if(cmd.index > 2 && cmd.index % 2 == 0 ){
+                        //     fast_waypoint = true;
+                        // }
+                        fast_waypoint = false;
                     }
                 }
                 break;

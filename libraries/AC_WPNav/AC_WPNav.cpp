@@ -76,7 +76,11 @@ const AP_Param::GroupInfo AC_WPNav::var_info[] = {
     AP_GROUPINFO("COOR_NS",   8, AC_WPNav, _corect_coordinate_ns, WPNAV_COORDINATE_NS),
     AP_GROUPINFO("SPRAY_ALL",   9, AC_WPNav, _spray_all, 0),
     AP_GROUPINFO("FAST_TURN",   11, AC_WPNav, _fast_turn, 0),
-
+    AP_GROUPINFO("PWM_NOZZLE",   17, AC_WPNav, _pwm_nozzle , 55),
+    AP_GROUPINFO("PWM_PUMP",   15, AC_WPNav, _pwm_pump , 25),
+    AP_GROUPINFO("SENSOR_PIN",   16, AC_WPNav, _sensor_pin , 60),
+    AP_GROUPINFO("HAS_OA_RD",   13, AC_WPNav, _has_oaradar , 0),
+    AP_GROUPINFO("RADIO_TYPE",   12, AC_WPNav, _radio_type , 10),
     AP_GROUPEND
 };
 
@@ -214,12 +218,16 @@ bool AC_WPNav::set_wp_origin_and_destination(const Vector3f& origin, const Vecto
     const Vector3f &curr_pos = _inav.get_position();
     _origin = origin;
     // TODO: if we use waypoint instead of survey we need to elimate this
-    // destination.x = destination.x + 100;
+    _destination = Vector3f(0,0,0);
     _destination = destination;
-    // gcs().send_text(MAV_SEVERITY_INFO, "sitha: =>index %i", copter.mode_auto.mission.get_current_nav_index());
-    if(copter.mode_auto.mission.get_current_nav_index() >= 2 && (copter.get_mode()==3 || copter.get_mode() == 4) ){
-        _destination.y = destination.y+(_corect_coordinate_we * 100);
-        _destination.x = destination.x+(_corect_coordinate_ns * 100);
+    // gcs().send_text(MAV_SEVERITY_INFO, "sitha: =>index lat %f lon %fbrn %f", _destination.x, destination.y, wp_bearing );
+    
+
+    // TODO: put guided mode will not work when resume from loiter
+    // gcs().send_text(MAV_SEVERITY_INFO, "sitha: =>index %i m%i", copter.mode_auto.mission.get_current_nav_index(),copter.get_mode());
+    if(copter.mode_auto.mission.get_current_nav_index() >= 2 && copter.get_mode()!=6 ){ // not to do in RTL 
+        _destination.y = _destination.y+(_corect_coordinate_we * 100);
+        _destination.x = _destination.x+(_corect_coordinate_ns * 100);
     }
     // This code ensure the altitude changed stay the same through out the mssion
     _destination.z = _flags_change_alt_by_pilot ? curr_pos.z : destination.z;
@@ -335,12 +343,14 @@ bool AC_WPNav::advance_wp_target_along_track(float dt)
         copter.ahrs.get_position(copter.mission_breakpoint); // assigning current post to mission_breakpoint
         copter.current_mission_length = copter.mode_auto.mission.num_commands(); // total command + 1
         copter.current_mission_index = copter.mode_auto.mission.get_current_nav_index();
-        
+        traveled_distance = get_traveled_distance();
+        // gcs().send_text(MAV_SEVERITY_INFO, "sitha: =>cover %f", traveled_distance);
+        wp_bearing = get_wp_bearing_to_destination();
     }
 
     /* PUMPSPINNER speed change detector: pump and spinner only at spray time or will spray all the time */
     if (copter.rc6_pwm != RC_Channels::get_radio_in(5) or copter.rc8_pwm != RC_Channels::get_radio_in(7) ){
-        if (copter.mission_16_index % 2 == 0 && copter.mode_auto.cmd_16_index > 1) copter.set_pump_spinner_pwm(true);
+        if (copter.mission_16_index % 2 == 0 && copter.mode_auto.cmd_16_index > 1&& copter.mode_auto.mission.state()==1) copter.set_pump_spinner_pwm(true);
     }
     
     /* ALT: Altitude*/
@@ -365,7 +375,8 @@ bool AC_WPNav::advance_wp_target_along_track(float dt)
         // if we set like this, it is going to be reverted to original alt which copter stay at mission alt
         // so this should comment out. 
         // _pilot_clime_cm = 0.0f;
-    }   
+    }
+    
     // gcs().send_text(MAV_SEVERITY_INFO, "sitha: =>flags 2 %f",  _pilot_clime_cm);
     // 3.calculate 3d vector from segment's origin
     // 1. get current location
@@ -375,11 +386,11 @@ bool AC_WPNav::advance_wp_target_along_track(float dt)
     
     if (_flags_change_alt_by_pilot){
         curr_delta.z -= _pilot_clime_cm;
-        gcs().send_text(MAV_SEVERITY_INFO, "sitha: =>change alt %f", _destination.z);
     }
     
     // 4.calculate how far along the track we are in cm?
     track_covered = curr_delta.x * _pos_delta_unit.x + (curr_delta.y) * _pos_delta_unit.y + curr_delta.z * _pos_delta_unit.z;
+    // gcs().send_text(MAV_SEVERITY_INFO, "sitha: =>cover x%f y%f", curr_delta.x, curr_delta.y);
     // 5.calculate the point closest to the vehicle on the segment from origin to destination
     Vector3f track_covered_pos = _pos_delta_unit * track_covered;
     // 6.calculate the distance vector from the vehicle to the closest point on the segment from origin to destination
@@ -486,6 +497,8 @@ bool AC_WPNav::advance_wp_target_along_track(float dt)
     if (_flags_change_alt_by_pilot){
         final_target.z += _pilot_clime_cm;
     }
+
+    // 17.5 Sitha send command for copter to fly here
     _pos_control.set_pos_target(final_target);
 
 
@@ -538,10 +551,27 @@ float AC_WPNav::get_wp_distance_to_destination() const
     return norm(_destination.x-curr.x,_destination.y-curr.y);
 }
 
+// get travel distance from origin
+
+float AC_WPNav::get_traveled_distance() const
+{
+    const Vector3f &curr = _inav.get_position();
+    return norm(curr.x-_origin.x,curr.y-_origin.y);
+}
+
 /// get_wp_bearing_to_destination - get bearing to next waypoint in centi-degrees
 int32_t AC_WPNav::get_wp_bearing_to_destination() const
 {
     return get_bearing_cd(_inav.get_position(), _destination);
+}
+
+int32_t AC_WPNav::get_wp_bearing_to_target(const Location& destination)
+{
+    Vector3f dest_neu;
+    bool terr_alt;
+    // convert destination location to vector
+    get_vector_NEU(destination, dest_neu, terr_alt);
+    return get_bearing_cd(_inav.get_position(), dest_neu);
 }
 
 /// update_wpnav - run the wp controller - should be called at 100hz or higher

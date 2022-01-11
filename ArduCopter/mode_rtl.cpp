@@ -139,8 +139,14 @@ void ModeRTL::return_start()
         restart_without_terrain();
     }
 
-    // initialise yaw to point home (maybe)
-    auto_yaw.set_mode_to_default(true);
+    // Sitha set head to home
+    if(wp_nav->_has_oaradar){
+        int32_t bearingMe = wp_nav->get_wp_bearing_to_destination();
+        auto_yaw.set_fixed_yaw(bearingMe * 0.01f, 0.0f, 1, false);
+    }else{
+        // initialise yaw to point home (maybe)
+        auto_yaw.set_mode_to_default(true);
+    }
 }
 
 // rtl_climb_return_run - implements the initial climb, return home and descent portions of RTL which all rely on the wp controller

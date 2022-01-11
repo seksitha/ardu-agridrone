@@ -371,6 +371,7 @@ public:
         FUNCTOR_BIND_MEMBER(&ModeAuto::verify_command, bool, const AP_Mission::Mission_Command &),
         FUNCTOR_BIND_MEMBER(&ModeAuto::exit_mission, void)};
     int16_t cmd_16_index = 0;
+    Location loc_from_cmd(const AP_Mission::Mission_Command& cmd) const;
 protected:
 
     const char *name() const override { return "AUTO"; }
@@ -381,6 +382,7 @@ protected:
     float crosstrack_error() const override { return wp_nav->crosstrack_error();}
     bool get_wp(Location &loc) override;
     void run_autopilot() override;
+    
 
 private:
     
@@ -397,8 +399,6 @@ private:
     void nav_guided_run();
     void loiter_run();
     void loiter_to_alt_run();
-
-    Location loc_from_cmd(const AP_Mission::Mission_Command& cmd) const;
 
     void payload_place_start(const Vector3f& destination);
     void payload_place_run();

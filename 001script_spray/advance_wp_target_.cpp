@@ -138,7 +138,7 @@ bool AC_WPNav::advance_wp_target_along_track(float dt)
 
     /* PUMPSPINNER speed change detector: pump and spinner only at spray time or will spray all the time */
     if (copter.rc6_pwm != RC_Channels::get_radio_in(5) or copter.rc8_pwm != RC_Channels::get_radio_in(7) ){
-        if (copter.mission_16_index % 2 == 0 && copter.mode_auto.cmd_16_index > 1) copter.set_pump_spinner_pwm(true);
+       // if (copter.mission_16_index % 2 == 0 && copter.mode_auto.cmd_16_index > 1) copter.set_pump_spinner_pwm(true);
     }
     
     /* ALT: Altitude*/
