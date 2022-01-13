@@ -159,10 +159,12 @@ public:
     /// get_wp_distance_to_destination - get horizontal distance to destination in cm
     virtual float get_wp_distance_to_destination() const;
 
-    float get_traveled_distance() const;
+    float get_traveled_distance();
 
     /// get_bearing_to_destination - get bearing to next waypoint in centi-degrees
     virtual int32_t get_wp_bearing_to_destination() const;
+
+    int32_t get_wp_bearing_origin_destination();
 
     int32_t get_wp_bearing_to_target(const Location& destination);
 

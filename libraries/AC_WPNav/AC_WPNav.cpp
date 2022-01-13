@@ -343,15 +343,25 @@ bool AC_WPNav::advance_wp_target_along_track(float dt)
         copter.ahrs.get_position(copter.mission_breakpoint); // assigning current post to mission_breakpoint
         copter.current_mission_length = copter.mode_auto.mission.num_commands(); // total command + 1
         copter.current_mission_index = copter.mode_auto.mission.get_current_nav_index();
-        traveled_distance = get_traveled_distance();
-        // gcs().send_text(MAV_SEVERITY_INFO, "sitha: =>cover %f", traveled_distance);
-        wp_bearing = get_wp_bearing_to_destination();
+        if (copter.mode_auto.mission.get_current_nav_index() > 1 ) {
+            traveled_distance = get_traveled_distance(); // TODO break more than 2 time in the same mission will cause the travel distance short
+            gcs().send_text(MAV_SEVERITY_INFO, "sitha: =>cover %i", get_wp_bearing_origin_destination());
+            wp_bearing = get_wp_bearing_origin_destination();
+        }
     }
 
     /* PUMPSPINNER speed change detector: pump and spinner only at spray time or will spray all the time */
-    if (copter.rc6_pwm != RC_Channels::get_radio_in(5) or copter.rc8_pwm != RC_Channels::get_radio_in(7) ){
-        if (copter.mission_16_index % 2 == 0 && copter.mode_auto.cmd_16_index > 1&& copter.mode_auto.mission.state()==1) copter.set_pump_spinner_pwm(true);
+    if(_radio_type == 12){
+        if(copter.rc6_pwm != _pwm_pump){
+            if (copter.mission_16_index % 2 == 0 && copter.mode_auto.cmd_16_index > 1&& copter.mode_auto.mission.state()==1) copter.set_pump_spinner_pwm(true);
+        }
+    }else{
+        if (copter.rc6_pwm != RC_Channels::get_radio_in(5) or copter.rc8_pwm != RC_Channels::get_radio_in(7) ){
+            if (copter.mission_16_index % 2 == 0 && copter.mode_auto.cmd_16_index > 1&& copter.mode_auto.mission.state()==1) copter.set_pump_spinner_pwm(true);
+        }
+
     }
+    
     
     /* ALT: Altitude*/
     int32_t throttle_val = copter.channel_throttle->get_radio_in();
@@ -553,16 +563,40 @@ float AC_WPNav::get_wp_distance_to_destination() const
 
 // get travel distance from origin
 
-float AC_WPNav::get_traveled_distance() const
+float AC_WPNav::get_traveled_distance() // put const here will make get_vector_NEU error?
 {
     const Vector3f &curr = _inav.get_position();
-    return norm(curr.x-_origin.x,curr.y-_origin.y);
+    Vector3f origin_;
+    bool ter;
+    origin_for_breakpoint.alt = 0;
+    if(origin_for_breakpoint.lat && origin_for_breakpoint.lng){
+        if(get_vector_NEU(origin_for_breakpoint, origin_,ter)){
+            return norm(curr.x-origin_.x,curr.y-origin_.y);
+        }
+    }
+   
+    return 0.0f;
 }
 
 /// get_wp_bearing_to_destination - get bearing to next waypoint in centi-degrees
 int32_t AC_WPNav::get_wp_bearing_to_destination() const
 {
     return get_bearing_cd(_inav.get_position(), _destination);
+}
+
+int32_t AC_WPNav::get_wp_bearing_origin_destination()
+{
+    Vector3f des;
+    Vector3f ori;
+    bool ter;
+    if(origin_for_breakpoint.lat && origin_for_breakpoint.lng){
+        get_vector_NEU(origin_for_breakpoint,ori,ter);
+        des.y = _destination.y-(_corect_coordinate_we * 100);
+        des.x = _destination.x-(_corect_coordinate_ns * 100);
+        return get_bearing_cd(ori, des);
+    }
+    return 0;
+    
 }
 
 int32_t AC_WPNav::get_wp_bearing_to_target(const Location& destination)

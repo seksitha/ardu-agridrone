@@ -507,16 +507,15 @@ void Copter::set_pump_spinner_pwm(bool spray_state){
     }
     if(spray_state == true){
         if(wp_nav->_radio_type == 12){
-            SRV_Channels::set_output_pwm_chan( chan_pump , RC_Channels::get_radio_in(5) > 1000 ? wp_nav->_pwm_pump < 100 ? wp_nav->_pwm_pump*10+1000 : 1950 : 1000);
-            SRV_Channels::set_output_pwm_chan( chan_spinner , rc8_pwm = RC_Channels::get_radio_in(7) > 1000 ? wp_nav->_pwm_nozzle < 100 ? wp_nav->_pwm_nozzle *10+1000: 1950 : 1000 );
+            SRV_Channels::set_output_pwm_chan( chan_pump , RC_Channels::get_radio_in(5) > 1080 ? wp_nav->_pwm_pump < 100 ? wp_nav->_pwm_pump*10+1000 : 1950 : 1000);
+            SRV_Channels::set_output_pwm_chan( chan_spinner , rc8_pwm = RC_Channels::get_radio_in(7) > 1080 ? wp_nav->_pwm_nozzle < 100 ? wp_nav->_pwm_nozzle *10+1000: 1950 : 1000 );
         }else{
             if (rc6_pwm != RC_Channels::get_radio_in(5) or rc8_pwm != RC_Channels::get_radio_in(7) ){
                 rc6_pwm = RC_Channels::get_radio_in(5);
                 rc8_pwm = RC_Channels::get_radio_in(7) > wp_nav->_pwm_nozzle*10+1000 ? wp_nav->_pwm_nozzle*10+1000 : RC_Channels::get_radio_in(7);
             }
             SRV_Channels::set_output_pwm_chan( chan_pump , rc6_pwm);
-            SRV_Channels::set_output_pwm_chan( chan_spinner , rc8_pwm);
-            
+            SRV_Channels::set_output_pwm_chan( chan_spinner , rc8_pwm);    
         }
         
         // gcs().send_text(MAV_SEVERITY_INFO, "spray on");
@@ -594,22 +593,33 @@ void Copter::one_hz_loop()
         {
             // gcs().send_text(MAV_SEVERITY_INFO, "sitha=> resume success %i",mode_auto.cmd_16_index );
 
-
-            float PI = 3.14150000f;
-            float R = 6378137.00f; // Sitha: Earth radius in meter
-            float lat = ((float)(wp_nav->origin_for_breakpoint.lat/10000000.0f)) * PI / 180.0f; //convert degree to radian
-            float lon = ((float)(wp_nav->origin_for_breakpoint.lng/10000000.0f)) * PI / 180.0f;
-            float brng = (float)wp_nav->wp_bearing*0.01f * PI / 180.0f;
-            float d = /*wp_nav->traveled_distance<400 && wp_nav->_fast_turn ? 0.0f :*/  wp_nav->traveled_distance*0.01f;
-            float newLat = asinf(sinf(lat) * cosf(d / R) + cosf(lat) * sinf(d / R) * cosf(brng));
-            float newLon = lon + atan2f(sinf(brng) * sinf(d / R) * cosf(lat), cosf(d / R) - sinf(lat) * sinf(newLat));
-            float latDegree = newLat * 180.0f / PI;
-            float lonDegree = newLon * 180.0f / PI; // result as radian so convert back to degree
-            gcs().send_text(MAV_SEVERITY_INFO, "sitha=> resume lat %f, %f brng %f", (float)(wp_nav->origin_for_breakpoint.lat/10000000.0f), (float)(wp_nav->origin_for_breakpoint.lng/10000000.0f),(float)wp_nav->wp_bearing*0.01f);
-            new_mission_waypoint_2.x = (int32_t)(latDegree*10000000);
-            new_mission_waypoint_2.y = (int32_t)(lonDegree*10000000);
-    
-            // current_mission_index include takeoff, mission_16_index only cmd_16
+            // TODO: this algorithm problem at the near of the end wp breakpoint
+            // float PI = 3.14159265f;
+            // float R = 6378137.0f; // Sitha: Earth radius in meter
+            // float half_radian = 180.0f;
+            
+            // // devide by 10+e7 won't work well but multiply by 0.00000001 work well
+            // float lat = (float)(wp_nav->origin_for_breakpoint.lat * 0.0000001f) * PI / half_radian; //convert degree to radian
+            // float lon = (float)(wp_nav->origin_for_breakpoint.lng * 0.0000001f) * PI / half_radian;
+            
+            // float brng = (float)(wp_nav->wp_bearing)*0.01f * PI / half_radian;
+            // float d = /*wp_nav->traveled_distance<400 && wp_nav->_fast_turn ? 0.0f :*/  (wp_nav->traveled_distance-70)*0.01f;
+            // float newLat = asinf(sinf(lat) * cosf(d / R) + cosf(lat) * sinf(d / R) * cosf(brng));
+            // float newLon = lon + atan2f(sinf(brng) * sinf(d / R) * cosf(lat), cosf(d / R) - sinf(lat) * sinf(newLat));
+            // float latDegree = newLat * half_radian / PI;
+            // float lonDegree = newLon * half_radian / PI; // result as radian so convert back to degree
+            // new_mission_waypoint_2.x = (int32_t)(latDegree*10000000);
+            // new_mission_waypoint_2.y = (int32_t)(lonDegree*10000000);    
+            // gcs().send_text(MAV_SEVERITY_INFO, "sitha=> resume lat %f, %f brng %f", (float)(wp_nav->origin_for_breakpoint.lat*.0000001f), (float)(wp_nav->origin_for_breakpoint.lng*0.0000001f),(float)wp_nav->wp_bearing*0.01f);
+            
+            // TODO: calculate offset lat x metters and offset lng x meters // work well, better than above dont know why.
+            float R = 6378137.00000000f;
+            float dlat = wp_nav->_corect_coordinate_ns/R;
+            float dlon = wp_nav->_corect_coordinate_we/(R*cosf(3.14150000f*(float)mission_breakpoint.lat/10000000/180.00000000f));
+            float correct_breakpoint_lat = ((float)mission_breakpoint.lat/10000000-(dlat*180/3.14150000f));
+            float correct_breakpoint_lng = ((float)mission_breakpoint.lng/10000000)-((dlon*180/3.14150000f));
+            new_mission_waypoint_2.x = int32_t(correct_breakpoint_lat*10000000);
+            new_mission_waypoint_2.y = (int32_t)(correct_breakpoint_lng*10000000);
             
             // if (mode_auto.cmd_16_index % 2 != 0){ // only happen when pilot stop at even wapoint
             //     /*TODO (Done) make sure the number 2 wp is spray point not turn point and not take off command*/
