@@ -119,7 +119,6 @@ bool ModeAuto::start_command(const AP_Mission::Mission_Command& cmd)
     
     if(cmd.index == 1){
         cmd_16_index = 0;
-        copter.mission_16_index = 0;
     }
     // gcs().send_text(MAV_SEVERITY_INFO, "sitha: =>index %i", cmd.index);
     switch(cmd.id) {
@@ -1136,12 +1135,11 @@ void ModeAuto::do_nav_wp(const AP_Mission::Mission_Command& cmd)
     if(!wp_nav->break_auto_by_user_state) {
         cmd_16_index = cmd_16_index + 1; // cmd_16_index is 0 at start so need to pluse one
     }
-    copter.mission_16_index = cmd_16_index;
-    // gcs().send_text(MAV_SEVERITY_INFO, "_______index %i missionState %i",cmd_16_index, mission.state());
+    gcs().send_text(MAV_SEVERITY_INFO, "_______index %i missionState %i",cmd_16_index, mission.state());
     if(wp_nav->_spray_all){
         if(cmd_16_index >1) copter.set_pump_spinner_pwm(true);
     }else{
-        if (cmd_16_index % 2 == 0 && copter.mission_16_index > 1 && mission.state()==1 ) {
+        if (cmd_16_index % 2 == 0 && cmd_16_index > 1 && mission.state()==1 ) {
             copter.set_pump_spinner_pwm(true);
         } 
         if (cmd_16_index % 2 != 0 || mission.state()==0)  {

@@ -343,21 +343,21 @@ bool AC_WPNav::advance_wp_target_along_track(float dt)
         copter.ahrs.get_position(copter.mission_breakpoint); // assigning current post to mission_breakpoint
         copter.current_mission_length = copter.mode_auto.mission.num_commands(); // total command + 1
         copter.current_mission_index = copter.mode_auto.mission.get_current_nav_index();
-        if (copter.mode_auto.mission.get_current_nav_index() > 1 ) {
-            traveled_distance = get_traveled_distance(); // TODO break more than 2 time in the same mission will cause the travel distance short
-            gcs().send_text(MAV_SEVERITY_INFO, "sitha: =>cover %i", get_wp_bearing_origin_destination());
-            wp_bearing = get_wp_bearing_origin_destination();
-        }
+        //if (copter.mode_auto.mission.get_current_nav_index() > 1 ) {
+            //traveled_distance = get_traveled_distance(); // TODO break more than 2 time in the same mission will cause the travel distance short
+            //gcs().send_text(MAV_SEVERITY_INFO, "sitha: =>cover %i", get_wp_bearing_origin_destination());
+            //wp_bearing = get_wp_bearing_origin_destination();
+        //}
     }
 
     /* PUMPSPINNER speed change detector: pump and spinner only at spray time or will spray all the time */
     if(_radio_type == 12){
         if(copter.rc6_pwm != _pwm_pump){
-            if (copter.mission_16_index % 2 == 0 && copter.mode_auto.cmd_16_index > 1&& copter.mode_auto.mission.state()==1) copter.set_pump_spinner_pwm(true);
+            if (copter.mode_auto.cmd_16_index % 2 == 0 && copter.mode_auto.cmd_16_index > 1&& copter.mode_auto.mission.state()==1) copter.set_pump_spinner_pwm(true);
         }
     }else{
         if (copter.rc6_pwm != RC_Channels::get_radio_in(5) or copter.rc8_pwm != RC_Channels::get_radio_in(7) ){
-            if (copter.mission_16_index % 2 == 0 && copter.mode_auto.cmd_16_index > 1&& copter.mode_auto.mission.state()==1) copter.set_pump_spinner_pwm(true);
+            if (copter.mode_auto.cmd_16_index % 2 == 0 && copter.mode_auto.cmd_16_index > 1&& copter.mode_auto.mission.state()==1) copter.set_pump_spinner_pwm(true);
         }
 
     }

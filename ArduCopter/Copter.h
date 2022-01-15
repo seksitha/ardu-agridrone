@@ -663,7 +663,6 @@ private:
     void rc_loop();
     uint8_t chan_pump;
     uint8_t chan_spinner;
-    uint16_t mission_16_index;
     bool pump_off_on_boot = false;
     uint16_t rc6_pwm;
     uint16_t rc8_pwm;

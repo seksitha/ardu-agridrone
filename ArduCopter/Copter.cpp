@@ -398,14 +398,14 @@ void Copter::ten_hz_logging_loop()
     }
 
     /*FLOWSENSOR */
-    if(get_mode()==3 && copter.mission_16_index > 1){
+    if(get_mode()==3 && copter.mode_auto.cmd_16_index > 1){
         // not to trigger the flow sensor at the beginning of the mission.
         uint8_t delay_monitor_flow = 40;
-        if (copter.mission_16_index % 2 != 0) {
+        if (copter.mode_auto.cmd_16_index % 2 != 0) {
             mission_timer_not_to_monitor_flow_at_start_waypoint = 0;
             return;
         }
-        if( copter.mission_16_index % 2 == 0  && mission_timer_not_to_monitor_flow_at_start_waypoint < delay_monitor_flow) {
+        if( copter.mode_auto.cmd_16_index % 2 == 0  && mission_timer_not_to_monitor_flow_at_start_waypoint < delay_monitor_flow) {
             mission_timer_not_to_monitor_flow_at_start_waypoint = mission_timer_not_to_monitor_flow_at_start_waypoint + 1;
             return;
         }
@@ -503,7 +503,7 @@ void Copter::set_pump_spinner_pwm(bool spray_state){
     if( spray_state == false) {
         SRV_Channels::set_output_pwm_chan( chan_pump , 1000);
         SRV_Channels::set_output_pwm_chan( chan_spinner , 1000);
-        // gcs().send_text(MAV_SEVERITY_INFO, "spray off");
+        if(copter.mode_auto.mission.state()==1)gcs().send_text(MAV_SEVERITY_INFO, "spray off");
     }
     if(spray_state == true){
         if(wp_nav->_radio_type == 12){
@@ -518,7 +518,7 @@ void Copter::set_pump_spinner_pwm(bool spray_state){
             SRV_Channels::set_output_pwm_chan( chan_spinner , rc8_pwm);    
         }
         
-        // gcs().send_text(MAV_SEVERITY_INFO, "spray on");
+        gcs().send_text(MAV_SEVERITY_INFO, "spray on");
     }
 }
 // one_hz_loop - runs at 1Hz
@@ -647,27 +647,28 @@ void Copter::one_hz_loop()
         wp_nav->break_auto_by_user_state = true;
     }
     
-    // if (motors->armed() && copter.get_mode()!=3 /*not equal auto*/
-    //     && mode_auto.mission.state() == 0 
-    //     && current_mission_index >= 3 && wp_nav->break_auto_by_user_state == true)
-    // {
-    //     // gcs().send_text(MAV_SEVERITY_INFO, "sitha: => _________breakpoint success");
-    //     mavlink_mission_item_int_t current_waypoint ;
-    //     mode_auto.mission.get_item(current_mission_index-1, current_waypoint);
-    //     current_waypoint.x = mission_breakpoint.lat;
-    //     current_waypoint.y = mission_breakpoint.lng;
-    //     mode_auto.mission.set_item(current_mission_index-1, current_waypoint);
-    //     mode_auto.mission.set_current_cmd(current_mission_index-1);
-    //     wp_nav->break_auto_by_user_state = false;
-    // }
-
-    // gcs().send_text(MAV_SEVERITY_INFO, "sitha: =>mission_16_index %i", mission_16_index);
-    // gcs().send_text(MAV_SEVERITY_INFO, "sitha: => c_le %i", copter.current_mission_index);
+    if (motors->armed() && copter.get_mode()!=3 /*not equal auto*/
+        && mode_auto.mission.state() == 0 
+        && current_mission_index >= 3 && wp_nav->break_auto_by_user_state == true)
+    {
+        
+        // Stop implement go to breakpoint when user stop or sensor problem. 
+        // TODO: should be an option if user wanted to incase sensor problem
+        // gcs().send_text(MAV_SEVERITY_INFO, "sitha: => _________breakpoint success");
+        
+        // mavlink_mission_item_int_t current_waypoint ;
+        // mode_auto.mission.get_item(current_mission_index-1, current_waypoint);
+        // current_waypoint.x = mission_breakpoint.lat;
+        // current_waypoint.y = mission_breakpoint.lng;
+        // mode_auto.mission.set_item(current_mission_index-1, current_waypoint);
+        // mode_auto.mission.set_current_cmd(current_mission_index-1);
+        wp_nav->break_auto_by_user_state = false; // help not to set cmd_16_index + 1 so continue spray
+    }
     
     if(copter.get_mode()!=3 /*not = auto*/ ){
         // when start mission cmd.index == 1 set 16_index to zero
         // but when break it is not reset because cmd.index is not 1 and if fly auto for some time
-        mission_16_index = 0;
+        mode_auto.cmd_16_index = 0;
         if(!motors->armed()) { // prevent on take off set current waypoint the old user break point
             wp_nav->break_auto_by_user_state = false;
             wp_nav->reset_param_on_start_mission();
