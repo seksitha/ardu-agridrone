@@ -477,7 +477,7 @@ void Copter::twentyfive_hz_logging()
     // At RTL we set yaw at mode_rtl.cpp
     if((copter.mode_auto.mission.get_current_nav_index() == 2 || (copter.mode_auto.mission.get_current_nav_index())%2==1) && copter.get_mode()==3 && wp_nav->_has_oaradar){
         int32_t bearingMe = wp_nav->get_wp_bearing_to_destination();
-        copter.flightmode->auto_yaw.set_fixed_yaw(bearingMe * 0.01f, 0.0f, 1, false);
+        copter.flightmode->auto_yaw.set_fixed_yaw(bearingMe * 0.01f, wp_nav->_yaw_oa_rate, 1, false);
     }
     
 }
@@ -503,7 +503,7 @@ void Copter::set_pump_spinner_pwm(bool spray_state){
     if( spray_state == false) {
         SRV_Channels::set_output_pwm_chan( chan_pump , 1000);
         SRV_Channels::set_output_pwm_chan( chan_spinner , 1000);
-        if(copter.mode_auto.mission.state()==1)gcs().send_text(MAV_SEVERITY_INFO, "spray off");
+        //gcs().send_text(MAV_SEVERITY_INFO, "spray off");
     }
     if(spray_state == true){
         if(wp_nav->_radio_type == 12){
@@ -518,7 +518,7 @@ void Copter::set_pump_spinner_pwm(bool spray_state){
             SRV_Channels::set_output_pwm_chan( chan_spinner , rc8_pwm);    
         }
         
-        gcs().send_text(MAV_SEVERITY_INFO, "spray on");
+        //gcs().send_text(MAV_SEVERITY_INFO, "spray on");
     }
 }
 // one_hz_loop - runs at 1Hz
@@ -621,16 +621,7 @@ void Copter::one_hz_loop()
             new_mission_waypoint_2.x = int32_t(correct_breakpoint_lat*10000000);
             new_mission_waypoint_2.y = (int32_t)(correct_breakpoint_lng*10000000);
             
-            // if (mode_auto.cmd_16_index % 2 != 0){ // only happen when pilot stop at even wapoint
-            //     /*TODO (Done) make sure the number 2 wp is spray point not turn point and not take off command*/
-            //     for (int i = 2; i < mode_auto.mission.num_commands()-1; i++) {
-            //         mavlink_mission_item_int_t waypoint ;
-            //         mode_auto.mission.get_item(i+1, waypoint); 
-            //         mode_auto.mission.set_item(i, waypoint); 
-            //     }
-            // }
-            
-            // in case pilot stop at the side turn don't set break point
+            // in case pilot stop at the side turn don't set break point QGC will take out this wp
             if(mode_auto.cmd_16_index % 2 == 0 || wp_nav->_spray_all==1){
                 mode_auto.mission.set_item(2, new_mission_waypoint_2 ); 
             } 
@@ -647,10 +638,10 @@ void Copter::one_hz_loop()
         wp_nav->break_auto_by_user_state = true;
     }
     
-    if (motors->armed() && copter.get_mode()!=3 /*not equal auto*/
-        && mode_auto.mission.state() == 0 
-        && current_mission_index >= 3 && wp_nav->break_auto_by_user_state == true)
-    {
+    // if (motors->armed() && copter.get_mode()!=3 /*not equal auto*/
+    //     && mode_auto.mission.state() == 0 
+    //     && current_mission_index >= 3 && wp_nav->break_auto_by_user_state == true)
+    // {
         
         // Stop implement go to breakpoint when user stop or sensor problem. 
         // TODO: should be an option if user wanted to incase sensor problem
@@ -662,13 +653,11 @@ void Copter::one_hz_loop()
         // current_waypoint.y = mission_breakpoint.lng;
         // mode_auto.mission.set_item(current_mission_index-1, current_waypoint);
         // mode_auto.mission.set_current_cmd(current_mission_index-1);
-        wp_nav->break_auto_by_user_state = false; // help not to set cmd_16_index + 1 so continue spray
-    }
+    //     wp_nav->break_auto_by_user_state = false; // help not to set cmd_16_index + 1 so continue spray
+    // }
     
     if(copter.get_mode()!=3 /*not = auto*/ ){
-        // when start mission cmd.index == 1 set 16_index to zero
-        // but when break it is not reset because cmd.index is not 1 and if fly auto for some time
-        mode_auto.cmd_16_index = 0;
+        // mode_auto.cmd_16_index = 0; // set this will make break by user no spray untill land
         if(!motors->armed()) { // prevent on take off set current waypoint the old user break point
             wp_nav->break_auto_by_user_state = false;
             wp_nav->reset_param_on_start_mission();

@@ -81,6 +81,7 @@ const AP_Param::GroupInfo AC_WPNav::var_info[] = {
     AP_GROUPINFO("SENSOR_PIN",   16, AC_WPNav, _sensor_pin , 60),
     AP_GROUPINFO("HAS_OA_RD",   13, AC_WPNav, _has_oaradar , 0),
     AP_GROUPINFO("RADIO_TYPE",   12, AC_WPNav, _radio_type , 10),
+    AP_GROUPINFO("YAW_OA",   14, AC_WPNav, _yaw_oa_rate , 150),
     AP_GROUPEND
 };
 
