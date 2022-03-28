@@ -113,7 +113,7 @@ void Mode::AutoYaw::set_fixed_yaw(float angle_deg, float turn_rate_dps, int8_t d
         }
         _fixed_yaw = wrap_360_cd((angle_deg * 100) + curr_yaw_target);
     }
-
+    copter.gcs().send_text(MAV_SEVERITY_INFO,"rate %f", turn_rate_dps);
     // get turn speed
     if (is_zero(turn_rate_dps)) {
         // default to regular auto slew rate

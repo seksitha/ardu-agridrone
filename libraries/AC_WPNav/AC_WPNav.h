@@ -272,6 +272,7 @@ public:
     AP_Int32   _pwm_nozzle;
     AP_Int32   _pwm_pump;
     AP_Int8    _has_oaradar;
+    AP_Int32   _yaw_oa_rate;
     float      traveled_distance;
     Location    origin_for_breakpoint;
     int32_t wp_bearing;

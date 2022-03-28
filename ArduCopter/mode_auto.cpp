@@ -1133,9 +1133,9 @@ void ModeAuto::do_nav_wp(const AP_Mission::Mission_Command& cmd)
     // this is the delay, stored in seconds
     loiter_time_max = cmd.p1;
     if(!wp_nav->break_auto_by_user_state) {
-        cmd_16_index = cmd_16_index + 1; // cmd_16_index is 0 at start so need to pluse one
+        cmd_16_index++; // cmd-16-index is 0 at start so need to pluse one
     }
-    gcs().send_text(MAV_SEVERITY_INFO, "_______index %i missionState %i",cmd_16_index, mission.state());
+    gcs().send_text(MAV_SEVERITY_INFO, "_______index %i",cmd_16_index);
     if(wp_nav->_spray_all){
         if(cmd_16_index >1) copter.set_pump_spinner_pwm(true);
     }else{
@@ -1203,7 +1203,7 @@ void ModeAuto::do_nav_wp(const AP_Mission::Mission_Command& cmd)
         }
         copter.wp_nav->set_fast_waypoint(fast_waypoint);
     }
-    
+    wp_nav->break_auto_by_user_state = false;    
 }
 
 // do_land - initiate landing procedure
