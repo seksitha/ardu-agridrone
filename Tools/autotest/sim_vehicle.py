@@ -526,7 +526,7 @@ def start_antenna_tracker(autotest, opts):
     tracker_instance = 1
     oldpwd = os.getcwd()
     os.chdir(vehicledir)
-    tracker_uarta = "tcp:127.0.0.1:" + str(5760 + 10 * tracker_instance)
+    tracker_uarta = "tcp:127.0.0.1:" + str(5766 + 10 * tracker_instance)
     exe = os.path.join(vehicledir, "AntennaTracker.elf")
     run_in_terminal_window(autotest,
                            "AntennaTracker",
@@ -1065,7 +1065,7 @@ if cmd_opts.frame is None:
     cmd_opts.frame = vinfo.options[cmd_opts.vehicle]["default_frame"]
 
 # setup ports for this instance
-mavlink_port = "tcp:127.0.0.1:" + str(5760 + 10 * cmd_opts.instance)
+mavlink_port = "tcp:127.0.0.1:" + str(5766 + 10 * cmd_opts.instance)
 simout_port = "127.0.0.1:" + str(5501 + 10 * cmd_opts.instance)
 
 frame_infos = vinfo.options_for_frame(cmd_opts.frame,
@@ -1149,6 +1149,7 @@ try:
         progress("Waiting for SITL to exit")
         wait_unlimited()
     else:
+        print("hi")
         start_mavproxy(cmd_opts, frame_infos)
 except KeyboardInterrupt:
     progress("Keyboard Interrupt received ...")

@@ -85,8 +85,8 @@ elif [ ${RELEASE_CODENAME} == 'trusty' ]; then
     SITLFML_VERSION="2"
     SITLCFML_VERSION="2"
 else
-    SITLFML_VERSION="2.5"
-    SITLCFML_VERSION="2.5"
+    SITLFML_VERSION="2.4"
+    SITLCFML_VERSION="2.4"
 fi
 
 # Lists of packages to install
@@ -276,14 +276,14 @@ grep -Fxq "$exportline4" ~/$SHELL_LOGIN 2>/dev/null || {
         echo "Skipping appending CCache to PATH."
     fi
 }
-echo "Done!"
+echo "Done before end!"
 
 if [[ $SKIP_AP_GIT_CHECK -ne 1 ]]; then
   if [ -d ".git" ]; then
     heading "Update git submodules"
     cd $ARDUPILOT_ROOT
     git submodule update --init --recursive
-    echo "Done!"
+    echo "Done for the jobs!"
   fi
 fi
 echo "---------- $0 end ----------"
