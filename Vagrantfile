@@ -17,7 +17,7 @@ VAGRANTFILE_API_VERSION = "2"
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.ssh.forward_x11 = true
-
+  config.rekey_ssh.enable = false
   # Provider-specific configuration so you can fine-tune various
   # backing providers for Vagrant. These expose provider-specific options.
   # Example for VirtualBox:
@@ -29,20 +29,22 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       #   # Use VBoxManage to customize the VM. For example to change memory:
       vb.customize ["modifyvm", :id, "--memory", "3192"]
       vb.customize ["modifyvm", :id, "--ioapic", "on"]
-      vb.customize ["modifyvm", :id, "--cpus", "2"]
+      vb.customize ["modifyvm", :id, "--cpus", "6"]
       # Make some effort to avoid clock skew
       vb.customize ["guestproperty", "set", :id, "/VirtualBox/GuestAdd/VBoxService/--timesync-set-threshold", "5000"]
       vb.customize ["guestproperty", "set", :id, "/VirtualBox/GuestAdd/VBoxService/--timesync-set-start"]
       vb.customize ["guestproperty", "set", :id, "/VirtualBox/GuestAdd/VBoxService/--timesync-set-on-restore", "1"]
   end
-
+  config.ssh.insert_key = false
+  config.ssh.private_key_path = ["~/.ssh/seksitha", "~/.vagrant.d/insecure_private_key"]
+  config.vm.provision "file", source: "~/.ssh/seksitha.pub", destination: "~/.ssh/authorized_keys"
   # If you are on windows then you must use a version of git >= 1.8.x
   # to update the submodules in order to build. Older versions of git
   # use absolute paths for submodules which confuses things.
 
   # removing this line causes "A box must be specified." error
   # and this is the default box that will be booted if no name is specified
-  config.vm.box = "ubuntu/bionic64"
+  config.vm.box = "ubuntu/focal64"
 
   # LTS, EOL April, 2019:
   config.vm.define "trusty32", autostart: false do |trusty32|
@@ -93,7 +95,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
   # 17.10, EOL July 2018
   # Only kept around for those few dev's who have already got this image and continue to use it; not available for download
-  config.vm.define "artful32", autostart: false do |artful32|
+  config.vm.define "artful64", autostart: false do |artful32|
     artful32.vm.box = "ubuntu/artful32"
     artful32.vm.provision :shell, path: "Tools/vagrant/initvagrant.sh"
     artful32.vm.provider "virtualbox" do |vb|
@@ -103,7 +105,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
   # 18.04 LTS
   # Only kept around for those few dev's who have already got this image and continue to use it; not available for download
-  config.vm.define "bionic32", autostart: false do |bionic32|
+  config.vm.define "bionic32",  autostart: false  do |bionic32|
     bionic32.vm.box = "ubuntu/bionic32"
     bionic32.vm.provision :shell, path: "Tools/vagrant/initvagrant.sh"
     bionic32.vm.provider "virtualbox" do |vb|
@@ -130,7 +132,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   end
 
   # 18.10
-  config.vm.define "cosmic64", autostart: false do |cosmic64|
+  config.vm.define "cosmic64",  autostart: false  do |cosmic64|
     cosmic64.vm.box = "ubuntu/cosmic64"
     cosmic64.vm.provision :shell, path: "Tools/vagrant/initvagrant.sh"
     cosmic64.vm.provider "virtualbox" do |vb|
