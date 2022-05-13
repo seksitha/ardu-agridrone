@@ -43,10 +43,13 @@ copy `environment_install from master/dev branch` \
 `sudo ./Tools/vagrant/initvagrant.sh`
 
 - for windows need to install `Xming` or you fail because it try to open extra terminal and cause error of `xTerm`. I don't know `cywine` but I also install it
-- There are serveral erro in running `.sh` file because of the `\r` need to run command `sed -i 's/\r$//'`  
+
+- There are serveral erro in running `.sh` file because of the `\r` need to run command `sed -i 's/\r$//' filename`  
 
 
 ### Use CUAV PW-link and forward the packet to virtualbox mission planner
 
 `mavproxy.py --master=udp:192.168.4.2:14550 --out=udp:192.168.4.3:14551` \
 `mavproxy.py --master=udp:localhost:14550 --out=udp:localhost:14555 --out=udp:localhost:14554`
+
+mavproxy.py --master=tcp:10.0.2.15:5760 --out 10.0.2.15:14551

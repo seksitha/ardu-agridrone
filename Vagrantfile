@@ -16,7 +16,9 @@
 VAGRANTFILE_API_VERSION = "2"
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+  config.ssh.forward_agent = true
   config.ssh.forward_x11 = true
+  config.ssh.forward_agent = true
   config.rekey_ssh.enable = false
   # Provider-specific configuration so you can fine-tune various
   # backing providers for Vagrant. These expose provider-specific options.
@@ -38,6 +40,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.ssh.insert_key = false
   config.ssh.private_key_path = ["~/.ssh/seksitha", "~/.vagrant.d/insecure_private_key"]
   config.vm.provision "file", source: "~/.ssh/seksitha.pub", destination: "~/.ssh/authorized_keys"
+  config.vm.network "forwarded_port", guest: 14550, guest_ip: "10.0.2.15", host_ip: "127.0.0.1", host: 14550, protocol: "udp"   # udp-mav
   # If you are on windows then you must use a version of git >= 1.8.x
   # to update the submodules in order to build. Older versions of git
   # use absolute paths for submodules which confuses things.

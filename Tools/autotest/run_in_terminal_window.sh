@@ -5,7 +5,9 @@
 # Sigh: theres no common way of handling command line args :-(
 name="$1"
 shift
+echo "This xterm script"
 echo "RiTW: Starting $name : $*"
+
 
 if [ -z "$SITL_RITW_MINIMIZE" ]; then
     SITL_RITW_MINIMIZE=1
@@ -34,17 +36,21 @@ elif [ -n "$DISPLAY" -a -n "$(which xterm)" ]; then
   if [ $SITL_RITW_MINIMIZE -eq 1 ]; then
       ICONIC=-iconic
   fi
+  echo "1"
   xterm $ICONIC -xrm 'XTerm*selectToClipboard: true' -xrm 'XTerm*initialFont: 6' -n "$name" -name "$name" -T "$name" -hold -e $* &
 elif [ -n "$DISPLAY" -a -n "$(which konsole)" ]; then
   konsole --hold -e $*
+  echo "2"
 elif [ -n "$DISPLAY" -a -n "$(which gnome-terminal)" ]; then
   gnome-terminal -e "$*"
+  echo "3"
 elif [ -n "$STY" ]; then
   # We are running inside of screen, try to start it there
   screen -X screen -t "$name" $*
+  echo "4"
 else
   filename="/tmp/$name.log"
-  echo "RiTW: Window access not found, logging to $filename"
+  echo "5 RiTW: Window access not found, logging to $filename"
   cmd="$1"
   shift
 # the following "true" is to avoid bash optimising the following call
