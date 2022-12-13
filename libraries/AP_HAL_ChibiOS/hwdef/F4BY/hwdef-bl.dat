@@ -1,45 +1,60 @@
 # hw definition file for processing by chibios_hwdef.py
-# for f4by bootloader
+# for Qiotek ZealotH743
 
-MCU STM32F4xx STM32F407xx
+# MCU class and specific type
+MCU STM32H7xx STM32H743xx
 
-APJ_BOARD_ID 20
-
+# crystal frequency
 OSCILLATOR_HZ 8000000
 
-STM32_ST_USE_TIMER 5
+# board ID for firmware load
+APJ_BOARD_ID 1036
 
-# flash size
-FLASH_SIZE_KB 1024
+FLASH_SIZE_KB 2048
 
-# order of UARTs (and USB)
-SERIAL_ORDER OTG1 USART2
+# bootloader is installed at zero offset
+FLASH_RESERVE_START_KB 0
 
-PE3 LED_BOOTLOADER OUTPUT
-PE2 LED_ACTIVITY OUTPUT
+# the location where the bootloader will put the firmware
+# the H743 has 128k sectors
+FLASH_BOOTLOADER_LOAD_KB 128
+
+# ChibiOS system timer
+STM32_ST_USE_TIMER 2
+
+#define LED pins
+PE2 LED_BOOTLOADER OUTPUT OPENDRAIN HIGH # red
+PE1 LED_ACTIVITY OUTPUT OPENDRAIN HIGH # green
+PE0 LED_RED OUTPUT OPENDRAIN HIGH # blue
+
 define HAL_LED_ON 1
 
-PA9 VBUS INPUT
+# order of UARTs (and USB)
+SERIAL_ORDER OTG1 UART7
+
+# UART7 is debug
+PE7 UART7_RX UART7 NODMA
+PE8 UART7_TX UART7 NODMA
 
 PA11 OTG_FS_DM OTG1
 PA12 OTG_FS_DP OTG1
+PA9  VBUS INPUT
 
 PA13 JTMS-SWDIO SWD
 PA14 JTCK-SWCLK SWD
 
-PD5 USART2_TX USART2
-PD6 USART2_RX USART2
-
-FLASH_USE_MAX_KB 16
-FLASH_RESERVE_START_KB 0
-
 define HAL_USE_EMPTY_STORAGE 1
-define HAL_STORAGE_SIZE 16384
+define HAL_STORAGE_SIZE 32768
 
-# location of application code
-FLASH_BOOTLOADER_LOAD_KB 16
+define BOOTLOADER_DEBUG SD7
 
 # Add CS pins to ensure they are high in bootloader
-PA4 MPU_CS CS
-PB12 FRAM_CS CS SPEED_VERYLOW
-PE15 FLASH_CS CS
+PB2  IMU1_CS       CS
+PE10 IMU2_CS       CS
+PE12 IMU3_CS       CS
+PA10 FRAM_CS       CS
+PA15 ADIS1647X_CS  CS
+PA8  AT7456_CS     CS
+PE3  MS5611_CS     CS
+PD7  DPS310_CS     CS
+PC10 FLASH_CS      CS

@@ -506,9 +506,19 @@ void Copter::set_pump_spinner_pwm(bool spray_state){
         //gcs().send_text(MAV_SEVERITY_INFO, "spray off");
     }
     if(spray_state == true){
-        if(wp_nav->_radio_type == 12){
-            SRV_Channels::set_output_pwm_chan( chan_pump , RC_Channels::get_radio_in(5) > 1080 ? wp_nav->_pwm_pump < 100 ? wp_nav->_pwm_pump*10+1000 : 1950 : 1000);
+       if(wp_nav->_radio_type == 12){
+            if(RC_Channels::get_radio_in(5) > 1600){
+                rc6_pwm =  wp_nav->_pwm_pump < 60 ? (wp_nav->_pwm_pump + 30) * 10 + 1000 : 2000;
+            }
+            else if(RC_Channels::get_radio_in(5) > 1150 && RC_Channels::get_radio_in(5) < 1550 ){
+                rc6_pwm = (wp_nav->_pwm_pump + 15) * 10 + 1000;
+            }
+            else if (RC_Channels::get_radio_in(5) < 1150){
+                 rc6_pwm = 1000;
+            } 
+            SRV_Channels::set_output_pwm_chan( chan_pump , rc6_pwm);
             SRV_Channels::set_output_pwm_chan( chan_spinner , rc8_pwm = RC_Channels::get_radio_in(7) > 1080 ? wp_nav->_pwm_nozzle < 100 ? wp_nav->_pwm_nozzle *10+1000: 1950 : 1000 );
+        
         }else{
             if (rc6_pwm != RC_Channels::get_radio_in(5) or rc8_pwm != RC_Channels::get_radio_in(7) ){
                 rc6_pwm = RC_Channels::get_radio_in(5);
@@ -540,7 +550,7 @@ void Copter::one_hz_loop()
     if (copter.get_mode()!=3 /*not auto*/ && chan_pump && chan_spinner && pump_off_on_boot){
         if (RC_Channels::get_radio_in(6) > 1500){
             uint16_t flow_val = hal.gpio->read(wp_nav->_sensor_pin); // nano  v5 pin 60
-            // uint16_t flow_val = hal.gpio->read(54); //       v5+
+            // uint16_t flow_val = hal.gpio->read(54); // v5+ set brd_pwm_count = 4 //connect aux5 // we set brd_pwm to 4 because it is count only servo pin not m1-8 pin
             if(flow_val == 0){
                 set_pump_spinner_pwm(true);
             }else{
@@ -552,17 +562,19 @@ void Copter::one_hz_loop()
     }
     // gcs().send_text(MAV_SEVERITY_INFO, "_______missionState %i ",mode_auto.mission.state());
     /*(Done) misison complete loiter and stop spray*/ 
-    if(mode_auto.mission.state() == 2 and wp_nav->loiter_state_after_mission_completed == false){
-        copter.set_mode(Mode::Number::LOITER, ModeReason::GCS_COMMAND);
+    if(mode_auto.mission.state() == 2 && wp_nav->loiter_state_after_mission_completed == false){
+        //copter.set_mode(Mode::Number::LOITER, ModeReason::GCS_COMMAND);
         set_pump_spinner_pwm(false);   
         wp_nav->loiter_state_after_mission_completed = true;
+        gcs().send_text(MAV_SEVERITY_INFO, "sitha: => ___________finished");
     }
     // stop spray on RTL when has water
     if(copter.get_mode()==6 && motors->armed()){
         set_pump_spinner_pwm(false);   
     }
     // 
-    // MISSIONBREAKPOINT code start here.
+    // MISSIONBREAKPOINT code start here.​ // this never get false until it is in auto.
+    // so if mission finished success state is alway true.
     if( copter.get_mode() == 3 && mode_auto.mission.mission_uploaded_success_state ){
         mode_auto.mission.mission_uploaded_success_state = false;
         // gcs().send_text(MAV_SEVERITY_INFO, "sitha: => ___________breakpoint hit1");

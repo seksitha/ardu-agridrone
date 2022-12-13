@@ -44,8 +44,14 @@ copy `environment_install from master/dev branch` \
 
 - for windows need to install `Xming` or you fail because it try to open extra terminal and cause error of `xTerm`. I don't know `cywine` but I also install it
 
+- below is not needed if we set git to ignore crlf descript in ardupilot 
 - There are serveral erro in running `.sh` file because of the `\r` need to run command `sed -i 's/\r$//' filename`  
 
+export DISPLAY=10.0.2.2:0
+
+sudo nano /etc/ssh/ssh_config 
+    x11 yes
+    trusted yes
 
 ### Use CUAV PW-link and forward the packet to virtualbox mission planner
 

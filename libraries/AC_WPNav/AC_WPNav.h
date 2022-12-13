@@ -33,7 +33,7 @@
 #define WPNAV_YAW_LEASH_PCT_MIN         0.134f      // target point must be at least this distance from the vehicle (expressed as a percentage of the maximum distance it can be from the vehicle - i.e. the leash length)
 
 #define WPNAV_RANGEFINDER_FILT_Z         0.25f      // range finder distance filtered at 0.25hz
-#define WPNAV_COORDINATE_WE             5.00f           
+#define WPNAV_COORDINATE_WE             0.00f           
 #define WPNAV_COORDINATE_NS             0.00f           
 
 class AC_WPNav
