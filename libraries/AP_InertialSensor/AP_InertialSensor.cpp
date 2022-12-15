@@ -503,11 +503,11 @@ AP_InertialSensor *AP_InertialSensor::get_singleton()
 /*
   register a new gyro instance
  */
-bool AP_InertialSensor::register_gyro(uint8_t &instance, uint16_t raw_sample_rate_hz, uint32_t id)
+uint8_t AP_InertialSensor::register_gyro(uint16_t raw_sample_rate_hz,
+                                         uint32_t id)
 {
     if (_gyro_count == INS_MAX_INSTANCES) {
-        GCS_SEND_TEXT(MAV_SEVERITY_WARNING, "Failed to register gyro id %u", unsigned(id));
-        return false;
+        AP_HAL::panic("Too many gyros");
     }
 
     _gyro_raw_sample_rates[_gyro_count] = raw_sample_rate_hz;
@@ -531,19 +531,17 @@ bool AP_InertialSensor::register_gyro(uint8_t &instance, uint16_t raw_sample_rat
     }
 #endif
 
-    instance = _gyro_count++;
-
-    return true;
+    return _gyro_count++;
 }
 
 /*
   register a new accel instance
  */
-bool AP_InertialSensor::register_accel(uint8_t &instance, uint16_t raw_sample_rate_hz, uint32_t id)
+uint8_t AP_InertialSensor::register_accel(uint16_t raw_sample_rate_hz,
+                                          uint32_t id)
 {
     if (_accel_count == INS_MAX_INSTANCES) {
-        GCS_SEND_TEXT(MAV_SEVERITY_WARNING, "Failed to register accel id %u", unsigned(id));
-        return false;
+        AP_HAL::panic("Too many accels");
     }
 
     _accel_raw_sample_rates[_accel_count] = raw_sample_rate_hz;
@@ -571,10 +569,8 @@ bool AP_InertialSensor::register_accel(uint8_t &instance, uint16_t raw_sample_ra
         _accel_id[_accel_count].save();
 #endif
 
-    instance = _accel_count++;
-    return true;
+    return _accel_count++;
 }
-
 
 /*
  * Start all backends for gyro and accel measurements. It automatically calls
