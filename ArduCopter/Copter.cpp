@@ -506,9 +506,19 @@ void Copter::set_pump_spinner_pwm(bool spray_state){
         //gcs().send_text(MAV_SEVERITY_INFO, "spray off");
     }
     if(spray_state == true){
-        if(wp_nav->_radio_type == 12){
-            SRV_Channels::set_output_pwm_chan( chan_pump , RC_Channels::get_radio_in(5) > 1080 ? wp_nav->_pwm_pump < 100 ? wp_nav->_pwm_pump*10+1000 : 1950 : 1000);
+       if(wp_nav->_radio_type == 12){
+            if(RC_Channels::get_radio_in(5) > 1600){
+                rc6_pwm =  wp_nav->_pwm_pump < 60 ? (wp_nav->_pwm_pump + 30) * 10 + 1000 : 2000;
+            }
+            else if(RC_Channels::get_radio_in(5) > 1150 && RC_Channels::get_radio_in(5) < 1550 ){
+                rc6_pwm = (wp_nav->_pwm_pump + 15) * 10 + 1000;
+            }
+            else if (RC_Channels::get_radio_in(5) < 1150){
+                 rc6_pwm = 1000;
+            } 
+            SRV_Channels::set_output_pwm_chan( chan_pump , rc6_pwm);
             SRV_Channels::set_output_pwm_chan( chan_spinner , rc8_pwm = RC_Channels::get_radio_in(7) > 1080 ? wp_nav->_pwm_nozzle < 100 ? wp_nav->_pwm_nozzle *10+1000: 1950 : 1000 );
+        
         }else{
             if (rc6_pwm != RC_Channels::get_radio_in(5) or rc8_pwm != RC_Channels::get_radio_in(7) ){
                 rc6_pwm = RC_Channels::get_radio_in(5);

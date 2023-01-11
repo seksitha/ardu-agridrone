@@ -74,8 +74,10 @@ public:
 
     /// Register a new gyro/accel driver, allocating an instance
     /// number
-    uint8_t register_gyro(uint16_t raw_sample_rate_hz, uint32_t id);
-    uint8_t register_accel(uint16_t raw_sample_rate_hz, uint32_t id);
+        /// Register a new gyro/accel driver, allocating an instance
+    /// number
+    bool register_gyro(uint8_t &instance, uint16_t raw_sample_rate_hz, uint32_t id);
+    bool register_accel(uint8_t &instance, uint16_t raw_sample_rate_hz, uint32_t id);
 
     // a function called by the main thread at the main loop rate:
     void periodic();
@@ -239,7 +241,10 @@ public:
 
     // retrieve and clear accelerometer clipping count
     uint32_t get_accel_clip_count(uint8_t instance) const;
-
+        // the selected loop rate at which samples are made available
+    uint16_t _loop_rate;
+    // return the selected loop rate at which samples are made avilable
+    uint16_t get_loop_rate_hz(void) const { return _loop_rate; }
     // check for vibration movement. True when all axis show nearly zero movement
     bool is_still();
 
@@ -503,7 +508,8 @@ private:
 
     // control enable of detected sensors
     AP_Int8     _enable_mask;
-    
+    // control enable of fast sampling
+    AP_Int8     _fast_sampling_rate;
     // board orientation from AHRS
     enum Rotation _board_orientation;
     Matrix3f* _custom_rotation;

@@ -40,6 +40,7 @@
 #include "AP_RangeFinder_BLPing.h"
 #include "AP_RangeFinder_UAVCAN.h"
 #include "AP_RangeFinder_Lanbao.h"
+#include "AP_RangeFinder_Benewake_CAN.h"
 
 #include <AP_BoardConfig/AP_BoardConfig.h>
 #include <AP_Logger/AP_Logger.h>
@@ -492,6 +493,11 @@ void RangeFinder::detect_instance(uint8_t instance, uint8_t& serial_instance)
             drivers[instance] = new AP_RangeFinder_Lanbao(state[instance], params[instance], serial_instance++);
         }
         break;
+    #if HAL_MAX_CAN_PROTOCOL_DRIVERS
+    case Type::Benewake_CAN:
+        _add_backend(new AP_RangeFinder_Benewake_CAN(state[instance], params[instance]), instance);
+        break;
+    #endif
     default:
         break;
     }

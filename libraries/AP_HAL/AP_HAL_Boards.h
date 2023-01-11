@@ -212,6 +212,17 @@
 #define HAL_CAN_DRIVER_DEFAULT 0
 #endif
 
+#ifndef HAL_NUM_CAN_IFACES
+#define HAL_NUM_CAN_IFACES 0
+#endif
+
+#ifndef HAL_MAX_CAN_PROTOCOL_DRIVERS
+#if defined(HAL_BOOTLOADER_BUILD)
+    #define HAL_MAX_CAN_PROTOCOL_DRIVERS 0
+#else
+    #define HAL_MAX_CAN_PROTOCOL_DRIVERS HAL_NUM_CAN_IFACES
+#endif
+#endif
 #ifdef HAVE_LIBDL
 #define AP_MODULE_SUPPORTED 1
 #else
@@ -235,4 +246,11 @@
 
 #ifndef USE_LIBC_REALLOC
 #define USE_LIBC_REALLOC 1
+#endif
+#ifndef __RAMFUNC__
+#define __RAMFUNC__
+#endif
+
+#ifndef __FASTRAMFUNC__
+#define __FASTRAMFUNC__
 #endif

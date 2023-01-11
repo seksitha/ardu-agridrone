@@ -24,6 +24,7 @@
 #include "AP_InertialSensor_BMI088.h"
 #include "AP_InertialSensor_Invensensev2.h"
 #include "AP_InertialSensor_ADIS1647x.h"
+#include "AP_InertialSensor_Invensensev3.h"
 
 /* Define INS_TIMING_DEBUG to track down scheduling issues with the main loop.
  * Output is on the debug console. */
@@ -57,6 +58,12 @@ extern const AP_HAL::HAL& hal;
 #define SAMPLE_UNIT 1
 
 #define GYRO_INIT_MAX_DIFF_DPS 0.1f
+
+#if defined(STM32H7) || defined(STM32F7)
+#define MPU_FIFO_FASTSAMPLE_DEFAULT 1
+#else
+#define MPU_FIFO_FASTSAMPLE_DEFAULT 0
+#endif
 
 // Class level parameters
 const AP_Param::GroupInfo AP_InertialSensor::var_info[] = {
@@ -457,7 +464,8 @@ const AP_Param::GroupInfo AP_InertialSensor::var_info[] = {
     // @Group: HNTCH_
     // @Path: ../Filter/HarmonicNotchFilter.cpp
     AP_SUBGROUPINFO(_harmonic_notch_filter, "HNTCH_",  41, AP_InertialSensor, HarmonicNotchFilterParams),
-
+    
+    AP_GROUPINFO("GYRO_RATE",  42, AP_InertialSensor, _fast_sampling_rate, MPU_FIFO_FASTSAMPLE_DEFAULT),
     /*
       NOTE: parameter indexes have gaps above. When adding new
       parameters check for conflicts carefully
@@ -503,11 +511,11 @@ AP_InertialSensor *AP_InertialSensor::get_singleton()
 /*
   register a new gyro instance
  */
-uint8_t AP_InertialSensor::register_gyro(uint16_t raw_sample_rate_hz,
-                                         uint32_t id)
+bool AP_InertialSensor::register_gyro(uint8_t &instance, uint16_t raw_sample_rate_hz, uint32_t id)
 {
     if (_gyro_count == INS_MAX_INSTANCES) {
-        AP_HAL::panic("Too many gyros");
+        GCS_SEND_TEXT(MAV_SEVERITY_WARNING, "Failed to register gyro id %u", unsigned(id));
+        return false;
     }
 
     _gyro_raw_sample_rates[_gyro_count] = raw_sample_rate_hz;
@@ -531,17 +539,19 @@ uint8_t AP_InertialSensor::register_gyro(uint16_t raw_sample_rate_hz,
     }
 #endif
 
-    return _gyro_count++;
+    instance = _gyro_count++;
+
+    return true;
 }
 
 /*
   register a new accel instance
  */
-uint8_t AP_InertialSensor::register_accel(uint16_t raw_sample_rate_hz,
-                                          uint32_t id)
+bool AP_InertialSensor::register_accel(uint8_t &instance, uint16_t raw_sample_rate_hz, uint32_t id)
 {
     if (_accel_count == INS_MAX_INSTANCES) {
-        AP_HAL::panic("Too many accels");
+        GCS_SEND_TEXT(MAV_SEVERITY_WARNING, "Failed to register accel id %u", unsigned(id));
+        return false;
     }
 
     _accel_raw_sample_rates[_accel_count] = raw_sample_rate_hz;
@@ -569,7 +579,8 @@ uint8_t AP_InertialSensor::register_accel(uint16_t raw_sample_rate_hz,
         _accel_id[_accel_count].save();
 #endif
 
-    return _accel_count++;
+    instance = _accel_count++;
+    return true;
 }
 
 /*

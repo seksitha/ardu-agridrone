@@ -4,7 +4,6 @@
 #include <AP_Common/AP_Common.h>
 #include <AP_GPS/AP_GPS.h>
 #include <AP_Math/AP_Math.h>
-#include <GCS_MAVLink/GCS.h>
 
 void AP_Airspeed::check_sensor_failures()
 {

@@ -253,8 +253,10 @@ void AP_InertialSensor_Invensense::start()
         break;
     }
 
-    _gyro_instance = _imu.register_gyro(1000, _dev->get_bus_id_devtype(gdev));
-    _accel_instance = _imu.register_accel(1000, _dev->get_bus_id_devtype(adev));
+    if (!_imu.register_gyro(_gyro_instance, 1000, _dev->get_bus_id_devtype(gdev)) ||
+        !_imu.register_accel(_accel_instance, 1000, _dev->get_bus_id_devtype(adev))) {
+        return;
+    }
 
     // setup ODR and on-sensor filtering
     _set_filter_register();
@@ -753,7 +755,8 @@ bool AP_InertialSensor_Invensense::_check_whoami(void)
     case MPU_WHOAMI_MPU9255:
         _mpu_type = Invensense_MPU9250;
         return true;
-    case MPU_WHOAMI_20608:
+    case MPU_WHOAMI_20608D:    
+    case MPU_WHOAMI_20608G:
         _mpu_type = Invensense_ICM20608;
         return true;
     case MPU_WHOAMI_20602:
