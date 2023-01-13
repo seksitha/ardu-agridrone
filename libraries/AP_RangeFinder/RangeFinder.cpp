@@ -494,7 +494,7 @@ void RangeFinder::detect_instance(uint8_t instance, uint8_t& serial_instance)
         }
         break;
     #if HAL_MAX_CAN_PROTOCOL_DRIVERS
-    case Type::Benewake_CAN:
+    case RangeFinder_Type::Benewake_CAN:
         _add_backend(new AP_RangeFinder_Benewake_CAN(state[instance], params[instance]), instance);
         break;
     #endif

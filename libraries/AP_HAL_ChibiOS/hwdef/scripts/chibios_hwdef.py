@@ -588,11 +588,48 @@ def make_line(label):
     return line
 
 
-def enable_can(f):
-    '''setup for a CAN enabled board'''
-    f.write('#define HAL_WITH_UAVCAN 1\n')
-    env_vars['HAL_WITH_UAVCAN'] = '1'
+# def enable_can(f):
+#     '''setup for a CAN enabled board'''
+#     f.write('#define HAL_WITH_UAVCAN 1\n')
+#     env_vars['HAL_WITH_UAVCAN'] = '1'
 
+def enable_can(f, num_ifaces):
+    '''setup for a CAN enabled board'''
+    global mcu_series
+    if mcu_series.startswith("STM32H7") or mcu_series.startswith("STM32G4"):
+        prefix = "FDCAN"
+        cast = "CanType"
+    else:
+        prefix = "CAN"
+        cast = "bxcan::CanType"
+
+    # allow for optional CAN_ORDER option giving bus order
+    can_order_str = get_config('CAN_ORDER', required=False, aslist=True)
+    if can_order_str:
+        can_order = [int(s) for s in can_order_str]
+    else:
+        can_order = []
+        for i in range(1,3):
+            if 'CAN%u' % i in bytype or (i == 1 and 'CAN' in bytype):
+                can_order.append(i)
+
+    base_list = []
+    for i in can_order:
+        base_list.append("reinterpret_cast<%s*>(uintptr_t(%s%s_BASE))" % (cast, prefix, i))
+        f.write("#define HAL_CAN_IFACE%u_ENABLE\n" % i)
+
+    can_rev_order = [-1]*3
+    for i in range(len(can_order)):
+        can_rev_order[can_order[i]-1] = i
+
+    f.write('#define HAL_CAN_INTERFACE_LIST %s\n' % ','.join([str(i-1) for i in can_order]))
+    f.write('#define HAL_CAN_INTERFACE_REV_LIST %s\n' % ','.join([str(i) for i in can_rev_order]))
+    f.write('#define HAL_CAN_BASE_LIST %s\n' % ','.join(base_list))
+    f.write('#define HAL_NUM_CAN_IFACES %d\n' % len(base_list))
+    global mcu_type
+    if 'CAN' in bytype and mcu_type.startswith("STM32F3"):
+        f.write('#define CAN1_BASE CAN_BASE\n')
+    env_vars['HAL_NUM_CAN_IFACES'] = str(len(base_list))
 
 def has_sdcard_spi():
     '''check for sdcard connected to spi bus'''
@@ -646,7 +683,10 @@ def write_mcu_config(f):
     if 'OTG2' in bytype:
         f.write('#define STM32_USB_USE_OTG2                  TRUE\n')
     if have_type_prefix('CAN') and 'AP_PERIPH' not in env_vars:
-        enable_can(f)
+        if 'CAN1' in bytype and 'CAN2' in bytype:
+            enable_can(f, 2)
+        else:
+            enable_can(f, 1)
 
     if get_config('PROCESS_STACK', required=False):
         env_vars['PROCESS_STACK'] = get_config('PROCESS_STACK')
@@ -1195,7 +1235,7 @@ def write_UART_config(f):
     if OTG2_index is not None:
         f.write('#define HAL_OTG2_UART_INDEX %d\n' % OTG2_index)
         f.write('''
-#if HAL_WITH_UAVCAN
+#if HAL_NUM_CAN_IFACES
 #ifndef HAL_OTG2_PROTOCOL
 #define HAL_OTG2_PROTOCOL SerialProtocol_SLCAN
 #endif
@@ -2052,3 +2092,61 @@ write_ROMFS(outdir)
 copy_common_linkerscript(outdir, args.hwdef)
 
 write_env_py(os.path.join(outdir, "env.py"))
+
+def add_apperiph_defaults(f):
+    '''add default defines for peripherals'''
+    if env_vars.get('AP_PERIPH',0) == 0:
+        # not AP_Periph
+        return
+
+    if not args.bootloader:
+        # use the app descriptor needed by MissionPlanner for CAN upload
+        env_vars['APP_DESCRIPTOR'] = 'MissionPlanner'
+
+    print("Setting up as AP_Periph")
+    f.write('''
+#ifndef HAL_SCHEDULER_ENABLED
+#define HAL_SCHEDULER_ENABLED 0
+#endif
+#ifndef HAL_LOGGING_ENABLED
+#define HAL_LOGGING_ENABLED 0
+#endif
+#ifndef HAL_GCS_ENABLED
+#define HAL_GCS_ENABLED 0
+#endif
+// default to no protocols, AP_Periph enables with params
+#define HAL_SERIAL1_PROTOCOL -1
+#define HAL_SERIAL2_PROTOCOL -1
+#define HAL_SERIAL3_PROTOCOL -1
+#define HAL_SERIAL4_PROTOCOL -1
+
+#ifndef HAL_LOGGING_MAVLINK_ENABLED
+#define HAL_LOGGING_MAVLINK_ENABLED 0
+#endif
+#ifndef HAL_MISSION_ENABLED
+#define HAL_MISSION_ENABLED 0
+#endif
+#ifndef HAL_RALLY_ENABLED
+#define HAL_RALLY_ENABLED 0
+#endif
+#ifndef HAL_CAN_DEFAULT_NODE_ID
+#define HAL_CAN_DEFAULT_NODE_ID 0
+#endif
+#define PERIPH_FW TRUE
+#define HAL_BUILD_AP_PERIPH
+#ifndef HAL_WATCHDOG_ENABLED_DEFAULT
+#define HAL_WATCHDOG_ENABLED_DEFAULT true
+#endif
+
+#ifndef AP_FETTEC_ONEWIRE_ENABLED
+#define AP_FETTEC_ONEWIRE_ENABLED 0
+#endif
+#ifndef HAL_BARO_WIND_COMP_ENABLED
+#define HAL_BARO_WIND_COMP_ENABLED 0
+
+#ifndef HAL_UART_STATS_ENABLED
+#define HAL_UART_STATS_ENABLED (HAL_GCS_ENABLED || HAL_LOGGING_ENABLED)
+#endif
+
+#endif
+''')

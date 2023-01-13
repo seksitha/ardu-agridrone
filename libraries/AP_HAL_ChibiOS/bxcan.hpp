@@ -42,23 +42,11 @@
 
 #include "AP_HAL_ChibiOS.h"
 
-#if HAL_WITH_UAVCAN
+#if HAL_NUM_CAN_IFACES
 
 # if !defined(STM32H7XX)
 
-#include <uavcan/uavcan.hpp>
-#include <stdint.h>
-
-#ifndef UAVCAN_CPP_VERSION
-# error UAVCAN_CPP_VERSION
-#endif
-
-#if UAVCAN_CPP_VERSION < UAVCAN_CPP11
-// #undef'ed at the end of this file
-# define constexpr const
-#endif
-
-namespace ChibiOS_CAN
+namespace ChibiOS
 {
 namespace bxcan
 {
@@ -109,18 +97,6 @@ struct CanType
     volatile uint32_t  FA1R;                /*!< CAN filter activation register,      Address offset: 0x21C         */
     uint32_t           RESERVED5[8];        /*!< Reserved, 0x220-0x23F                                              */
     FilterRegisterType FilterRegister[28];  /*!< CAN Filter Register,                 Address offset: 0x240-0x31C   */
-};
-
-/**
- * CANx register sets
- */
-CanType* const Can[UAVCAN_STM32_NUM_IFACES] =
-{
-    reinterpret_cast<CanType*>(0x40006400)
-#if UAVCAN_STM32_NUM_IFACES > 1
-    ,
-    reinterpret_cast<CanType*>(0x40006800)
-#endif
 };
 
 /* CAN master control register */
@@ -323,8 +299,5 @@ constexpr unsigned long FMR_FINIT =           (1U << 0); /* Bit 0:  Filter Init 
 }
 }
 
-#if UAVCAN_CPP_VERSION < UAVCAN_CPP11
-# undef constexpr
-#endif
 #endif //!defined(STM32H7XX)
-#endif //HAL_WITH_UAVCAN
+#endif // HAL_NUM_CAN_IFACES

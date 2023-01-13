@@ -23,6 +23,16 @@
 #include <AP_Math/AP_Math.h>
 #include <GCS_MAVLink/GCS_MAVLink.h>
 
+#ifndef AP_OPTICALFLOW_ENABLED
+#define AP_OPTICALFLOW_ENABLED 1
+#endif
+
+#ifndef HAL_MSP_OPTICALFLOW_ENABLED
+#define HAL_MSP_OPTICALFLOW_ENABLED (AP_OPTICALFLOW_ENABLED && (HAL_MSP_ENABLED && !HAL_MINIMIZE_FEATURES))
+#endif
+
+#if AP_OPTICALFLOW_ENABLED
+
 class OpticalFlow_backend;
 class AP_AHRS_NavEKF;
 
@@ -130,3 +140,4 @@ namespace AP {
 }
 
 #include "OpticalFlow_backend.h"
+#endif

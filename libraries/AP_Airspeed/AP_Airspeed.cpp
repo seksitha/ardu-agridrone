@@ -31,10 +31,10 @@
 #include "AP_Airspeed_DLVR.h"
 #include "AP_Airspeed_analog.h"
 #include "AP_Airspeed_Backend.h"
-#if HAL_WITH_UAVCAN
+#if HAL_ENABLE_LIBUAVCAN_DRIVERS
 #include "AP_Airspeed_UAVCAN.h"
 #endif
-
+#define LOG_TAG "AirSpeed"
 extern const AP_HAL::HAL &hal;
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
@@ -315,7 +315,7 @@ void AP_Airspeed::init()
 #endif // !HAL_MINIMIZE_FEATURES
             break;
         case TYPE_UAVCAN:
-#if HAL_WITH_UAVCAN
+#if HAL_ENABLE_LIBUAVCAN_DRIVERS
             sensor[i] = AP_Airspeed_UAVCAN::probe(*this, i);
 #endif
             break;

@@ -50,7 +50,7 @@ public:
     
     void init(void);
     void init_safety(void);
-
+    static void allocation_error(const char *reason, ...) FMT_PRINTF(1, 2) NORETURN;
     static const struct AP_Param::GroupInfo var_info[];
 
     // notify user of a fatal startup error related to available sensors. 

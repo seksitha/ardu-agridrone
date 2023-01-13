@@ -24,13 +24,6 @@
 #include <AP_Vehicle/AP_Vehicle_Type.h>
 #include <GCS_MAVLink/GCS.h>
 
-#if HAL_WITH_UAVCAN
-#include <AP_UAVCAN/AP_UAVCAN.h>
-#if CONFIG_HAL_BOARD == HAL_BOARD_LINUX
-#include <AP_HAL_Linux/CAN.h>
-#endif
-#endif
-
 #include <stdio.h>
 
 #ifndef BOARD_TYPE_DEFAULT
@@ -343,7 +336,15 @@ void AP_BoardConfig::init_safety()
   notify user of a fatal startup error related to available sensors. 
 */
 bool AP_BoardConfig::_in_sensor_config_error;
-
+void AP_BoardConfig::allocation_error(const char *fmt, ...)
+{
+    va_list arg_list;
+    va_start(arg_list, fmt);
+    char newfmt[64] {};
+    snprintf(newfmt, sizeof(newfmt), "Unable to allocate %s", fmt);
+    throw_error("Allocation Error", newfmt, arg_list);
+    va_end(arg_list);
+}
 void AP_BoardConfig::sensor_config_error(const char *reason)
 {
     _in_sensor_config_error = true;

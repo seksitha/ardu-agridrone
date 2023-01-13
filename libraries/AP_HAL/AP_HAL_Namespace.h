@@ -28,10 +28,11 @@ namespace AP_HAL {
     class Scheduler;
     class Semaphore;
     class OpticalFlow;
-
-    class CANProtocol;
-    class CANManager;
-    class CAN;
+    
+    class EventHandle;
+    class EventSource;
+    class CANIface;
+    class CANFrame;
 
     class Util;
     class Flash;

@@ -1,8 +1,11 @@
 #pragma once
 #include "OpticalFlow_backend.h"
 
-#if HAL_WITH_UAVCAN
 
+#ifndef AP_OPTICALFLOW_HEREFLOW_ENABLED
+#define AP_OPTICALFLOW_HEREFLOW_ENABLED (AP_OPTICALFLOW_ENABLED && HAL_ENABLE_LIBUAVCAN_DRIVERS)
+#endif
+#if AP_OPTICALFLOW_HEREFLOW_ENABLED
 #include <AP_UAVCAN/AP_UAVCAN.h>
 
 class MeasurementCb;
@@ -32,4 +35,4 @@ private:
     void _push_state(void);
 
 };
-#endif //HAL_WITH_UAVCAN
+#endif  // AP_OPTICALFLOW_HEREFLOW_ENABLED

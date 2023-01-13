@@ -24,6 +24,10 @@
 
 #include "LoggerMessageWriter.h"
 
+#ifndef HAL_LOGGING_ENABLED
+#define HAL_LOGGING_ENABLED 1
+#endif
+
 class AP_Logger_Backend;
 class AP_AHRS;
 class AP_AHRS_View;
@@ -190,6 +194,10 @@ public:
     // get singleton instance
     static AP_Logger *get_singleton(void) {
         return _singleton;
+    }
+    // get count of number of times we have started logging
+    uint8_t get_log_start_count(void) const {
+        return _log_start_count;
     }
 
     // initialisation
@@ -505,6 +513,10 @@ private:
 
     // start page of log data
     uint32_t _log_data_page;
+
+    // count of number of times we've started logging
+    // can be used by other subsystems to detect if they should log data
+    uint8_t _log_start_count;
 
     GCS_MAVLINK *_log_sending_link;
     HAL_Semaphore_Recursive _log_send_sem;

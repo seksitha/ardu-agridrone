@@ -34,8 +34,8 @@
 #include <AP_Terrain/AP_Terrain.h>
 #include <AP_Scripting/AP_Scripting.h>
 
-#if HAL_WITH_UAVCAN
-  #include <AP_BoardConfig/AP_BoardConfig_CAN.h>
+#if HAL_MAX_CAN_PROTOCOL_DRIVERS
+  #include <AP_CANManager/AP_CANManager.h>
   #include <AP_Common/AP_Common.h>
   #include <AP_Vehicle/AP_Vehicle.h>
 
@@ -750,14 +750,15 @@ bool AP_Arming::proximity_checks(bool report) const
 
 bool AP_Arming::can_checks(bool report)
 {
-#if HAL_WITH_UAVCAN
+{
+#if HAL_MAX_CAN_PROTOCOL_DRIVERS
     if (check_enabled(ARMING_CHECK_SYSTEM)) {
         char fail_msg[50] = {};
         uint8_t num_drivers = AP::can().get_num_drivers();
 
         for (uint8_t i = 0; i < num_drivers; i++) {
-            switch (AP::can().get_protocol_type(i)) {
-                case AP_BoardConfig_CAN::Protocol_Type_KDECAN: {
+             switch (AP::can().get_driver_type(i)) {
+                case AP_CANManager::Driver_Type_KDECAN: {
 // To be replaced with macro saying if KDECAN library is included
 #if APM_BUILD_TYPE(APM_BUILD_ArduCopter) || APM_BUILD_TYPE(APM_BUILD_ArduPlane) || APM_BUILD_TYPE(APM_BUILD_ArduSub)
                     AP_KDECAN *ap_kdecan = AP_KDECAN::get_kdecan(i);
@@ -769,7 +770,7 @@ bool AP_Arming::can_checks(bool report)
                     break;
 #endif
                 }
-                case AP_BoardConfig_CAN::Protocol_Type_UAVCAN:
+                 case AP_CANManager::Driver_Type_UAVCAN:
                 {
                     snprintf(fail_msg, ARRAY_SIZE(fail_msg), "UAVCAN failed");
                     if (!AP::uavcan_server().prearm_check(fail_msg, ARRAY_SIZE(fail_msg))) {
@@ -777,7 +778,7 @@ bool AP_Arming::can_checks(bool report)
                         return false;
                     }
                 }
-                case AP_BoardConfig_CAN::Protocol_Type_None:
+                case AP_CANManager::Driver_Type_None:
                 default:
                     break;
             }

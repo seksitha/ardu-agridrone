@@ -337,3 +337,5 @@
 #define HAL_Semaphore Linux::Semaphore
 #define HAL_Semaphore_Recursive Linux::Semaphore
 
+#include <AP_HAL/EventHandle.h>
+#define HAL_EventHandle AP_HAL::EventHandle

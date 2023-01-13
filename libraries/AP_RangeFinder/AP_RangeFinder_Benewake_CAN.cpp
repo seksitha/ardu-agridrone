@@ -59,9 +59,9 @@ void AP_RangeFinder_Benewake_CAN::update(void)
     const uint32_t now = AP_HAL::millis();
     if (_distance_count == 0 && now - state.last_reading_ms > 500) {
         // no new data.
-        set_status(RangeFinder::Status::NoData);
+        set_status(RangeFinder::RangeFinder_Status::RangeFinder_NoData);
     } else if (_distance_count != 0) {
-        state.distance_m = 0.01 * (_distance_sum_cm / _distance_count);
+        state.distance_cm = /*0.01 */ (_distance_sum_cm / _distance_count);
         state.last_reading_ms = AP_HAL::millis();
         _distance_sum_cm = 0;
         _distance_count = 0;

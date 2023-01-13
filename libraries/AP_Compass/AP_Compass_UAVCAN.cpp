@@ -15,19 +15,17 @@
 
 #include <AP_HAL/AP_HAL.h>
 
-#if HAL_WITH_UAVCAN
+#if HAL_ENABLE_LIBUAVCAN_DRIVERS
 
 #include "AP_Compass_UAVCAN.h"
 
-#include <AP_BoardConfig/AP_BoardConfig_CAN.h>
+#include <AP_CANManager/AP_CANManager.h>
 #include <AP_UAVCAN/AP_UAVCAN.h>
 
 #include <uavcan/equipment/ahrs/MagneticFieldStrength.hpp>
 #include <uavcan/equipment/ahrs/MagneticFieldStrength2.hpp>
-
+#define LOG_TAG "COMPASS"
 extern const AP_HAL::HAL& hal;
-
-#define debug_mag_uavcan(level_debug, can_driver, fmt, args...) do { if ((level_debug) <= AP::can().get_debug_level_driver(can_driver)) { printf(fmt, ##args); }} while (0)
 
 
 // Frontend Registry Binders
@@ -83,8 +81,8 @@ AP_Compass_Backend* AP_Compass_UAVCAN::probe(uint8_t index)
                 return nullptr;
             }
             _detected_modules[index].driver = driver;
-            debug_mag_uavcan(2,
-                                _detected_modules[index].ap_uavcan->get_driver_index(),
+            AP::can().log_text(AP_CANManager::LOG_INFO,
+                                LOG_TAG,
                                 "Found Mag Node %d on Bus %d Sensor ID %d\n",
                                 _detected_modules[index].node_id,
                                 _detected_modules[index].ap_uavcan->get_driver_index(),
@@ -104,7 +102,7 @@ bool AP_Compass_UAVCAN::init()
     set_dev_id(_instance, _devid);
     set_external(_instance, true);
 
-    debug_mag_uavcan(2, _ap_uavcan->get_driver_index(),  "AP_Compass_UAVCAN loaded\n\r");
+    AP::can().log_text(AP_CANManager::LOG_INFO, LOG_TAG,  "AP_Compass_UAVCAN loaded\n\r");
     return true;
 }
 

@@ -77,7 +77,7 @@ public:
         RangeFinder_TYPE_BenewakeTFminiPlus = 25,
         RangeFinder_TYPE_Lanbao = 26,
         RangeFinder_TYPE_BenewakeTF03 = 27,
-        Benewake_CAN = 34,
+        RangeFinder_TYPE_Benewake_CAN = 34,
     };
 
     enum RangeFinder_Function {
@@ -175,6 +175,7 @@ private:
     AP_RangeFinder_Backend *drivers[RANGEFINDER_MAX_INSTANCES];
     uint8_t num_instances;
     float estimated_terrain_height;
+    HAL_Semaphore detect_sem;
     Vector3f pos_offset_zero;   // allows returning position offsets of zero for invalid requests
 
     void convert_params(void);

@@ -19,10 +19,9 @@
 #include "Util.h"
 #include "OpticalFlow.h"
 #include "Flash.h"
+#include "EventHandle.h"
 
-#if HAL_WITH_UAVCAN
-#include "CAN.h"
-#endif
+#include "CANIface.h"
 
 #include "utility/BetterStream.h"
 

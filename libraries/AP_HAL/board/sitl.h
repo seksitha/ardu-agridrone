@@ -32,3 +32,5 @@
 #define HAL_BOARD_STORAGE_DIRECTORY "."
 #endif
 
+#include <AP_HAL/EventHandle.h>
+#define HAL_EventHandle AP_HAL::EventHandle

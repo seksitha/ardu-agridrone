@@ -37,7 +37,7 @@ public:
     virtual bool is_initialized() = 0;
     virtual void set_blocking_writes(bool blocking) = 0;
     virtual bool tx_pending() = 0;
-
+    virtual uint32_t available_locked(uint32_t key) { return 0; }
     // lock a port for exclusive use. Use a key of 0 to unlock
     virtual bool lock_port(uint32_t write_key, uint32_t read_key) { return false; }
 

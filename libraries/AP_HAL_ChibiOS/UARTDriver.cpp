@@ -127,7 +127,21 @@ void UARTDriver::thread_init(void)
                                            this);
 #endif
 }
+uint32_t UARTDriver::available_locked(uint32_t key)
+{
+    if (lock_read_key != 0 && key != lock_read_key) {
+        return -1;
+    }
+    if (sdef.is_usb) {
+#ifdef HAVE_USB_SERIAL
 
+        if (((SerialUSBDriver*)sdef.serial)->config->usbp->state != USB_ACTIVE) {
+            return 0;
+        }
+#endif
+    }
+    return _readbuf.available();
+}
 #ifndef HAL_STDOUT_SERIAL
 /*
   hook to allow printf() to work on hal.console when we don't have a

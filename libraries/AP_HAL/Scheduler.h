@@ -67,7 +67,7 @@ public:
                                              uint32_t period_us) = 0;
 
     virtual void     system_initialized() = 0;
-
+    virtual bool     is_system_initialized() = 0;
     virtual void     reboot(bool hold_in_bootloader) = 0;
 
     /**

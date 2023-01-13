@@ -91,7 +91,7 @@ public:
     void     reboot(bool hold_in_bootloader) override;
 
     bool     in_main_thread() const override { return get_main_thread() == chThdGetSelfX(); }
-
+    bool     is_system_initialized() override { return _initialized; };
     void     system_initialized() override;
     void     hal_initialized() { _hal_initialized = true; }
 
