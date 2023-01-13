@@ -14,8 +14,9 @@
     "udp": "sim_vehicle.py -v ArduCopter -j 2 --moddebug=3 --out=127.0.0.1:14555 --custom-location=13.03865,103.29179,0,0",
     "build":"./waf configure --board CUAVv5Nano && ./waf copter",
     "list":"./waf list_boards",
-    "build-v5+":"./waf configure --board CUAVv5 && ./waf copter",
-    "build-v3":"./waf configure --board fmuv3 && ./waf copter"
+    "build-qoi":"./waf configure --board QioTekZealotH743 && ./waf -j20 copter",
+    "build-qoif4":"./waf configure --board QioTekAdeptF407 && ./waf -j20 copter",
+    "build-v3":"./waf configure --board fmuv3 && ./waf -j20 copter"
   },
   "repository": {
     "type": "git",

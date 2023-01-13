@@ -75,7 +75,7 @@ public:
 
     // notify of a fifo reset
     void notify_fifo_reset(void);
-
+    virtual bool get_output_banner(char* banner, uint8_t banner_len) { return false; }
     /*
       device driver IDs. These are used to fill in the devtype field
       of the device ID, which shows up as INS*ID* parameters to
@@ -109,6 +109,13 @@ public:
         DEVTYPE_INS_ICM20602 = 0x2F,
         DEVTYPE_INS_ICM20601 = 0x30,
         DEVTYPE_INS_ADIS1647X = 0x31,
+        DEVTYPE_INS_ICM40609 = 0x33,
+        DEVTYPE_INS_ICM42688 = 0x34,
+        DEVTYPE_INS_ICM42605 = 0x35,
+        DEVTYPE_INS_ICM40605 = 0x36,
+        DEVTYPE_INS_IIM42652 = 0x37,
+        DEVTYPE_INS_ICM42670 = 0x3A,
+        DEVTYPE_INS_ICM45686 = 0x3B,
     };
 
 protected:
@@ -279,7 +286,14 @@ protected:
     void set_gyro_orientation(uint8_t instance, enum Rotation rotation) {
         _imu._gyro_orientation[instance] = rotation;
     }
-
+    // if fast sampling is enabled, the rate to use in kHz
+    uint8_t get_fast_sampling_rate() {
+        return (1 << uint8_t(_imu._fast_sampling_rate));
+    }
+        uint16_t get_loop_rate_hz(void) const {
+        // enum can be directly cast to Hz
+        return (uint16_t)_imu._loop_rate;
+    }
     void set_accel_orientation(uint8_t instance, enum Rotation rotation) {
         _imu._accel_orientation[instance] = rotation;
     }

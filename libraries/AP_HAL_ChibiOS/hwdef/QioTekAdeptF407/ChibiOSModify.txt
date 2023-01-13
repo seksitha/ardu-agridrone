@@ -1,0 +1,10 @@
+libraries\AP_HAL_ChibiOS\hwdef\scripts\STM32F407xx.py
+line 20
+        (0x20020000, 128, 2), # CCM memory, faster, but not DMA safe
+
+
+modules\ChibiOS\os\common\ext\ST\STM32F4xx\stm32f407xx.h
+line 925
+#define CCMDATARAM_BASE       0x20020000U /*!< CCM(core coupled memory) data RAM(64 KB) base address in the alias region  */
+line 938
+#define CCMDATARAM_END        0x2003FC00U /*!< CCM data RAM end address                                                   */

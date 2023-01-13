@@ -49,89 +49,90 @@ static SPIConfig highspeed;
  */
 bool sdcard_init()
 {
-#ifdef USE_POSIX
-    WITH_SEMAPHORE(sem);
+    #ifdef USE_POSIX
+        WITH_SEMAPHORE(sem);
 
-    uint8_t sd_slowdown = AP_BoardConfig::get_sdcard_slowdown();
-#if HAL_USE_SDC
+        uint8_t sd_slowdown = AP_BoardConfig::get_sdcard_slowdown();
+    
+    #if HAL_USE_SDC
 
-    if (SDCD1.bouncebuffer == nullptr) {
-        // allocate 4k bouncebuffer for microSD to match size in
-        // AP_Logger
-        bouncebuffer_init(&SDCD1.bouncebuffer, 4096, true);
-    }
-
-    if (sdcard_running) {
-        sdcard_stop();
-    }
-
-    const uint8_t tries = 3;
-    for (uint8_t i=0; i<tries; i++) {
-        sdcconfig.slowdown = sd_slowdown;
-        sdcStart(&SDCD1, &sdcconfig);
-        if(sdcConnect(&SDCD1) == HAL_FAILED) {
-            sdcStop(&SDCD1);
-            continue;
+        if (SDCD1.bouncebuffer == nullptr) {
+            // allocate 4k bouncebuffer for microSD to match size in
+            // AP_Logger
+            bouncebuffer_init(&SDCD1.bouncebuffer, 4096, true);
         }
-        if (f_mount(&SDC_FS, "/", 1) != FR_OK) {
-            sdcDisconnect(&SDCD1);
-            sdcStop(&SDCD1);
-            continue;
-        }
-        printf("Successfully mounted SDCard (slowdown=%u)\n", (unsigned)sd_slowdown);
 
-        // Create APM Directory if needed
-        AP::FS().mkdir("/APM");
+        if (sdcard_running) {
+            sdcard_stop();
+        }
+
+        const uint8_t tries = 3;
+        for (uint8_t i=0; i<tries; i++) {
+            sdcconfig.slowdown = sd_slowdown;
+            sdcStart(&SDCD1, &sdcconfig);
+            if(sdcConnect(&SDCD1) == HAL_FAILED) {
+                sdcStop(&SDCD1);
+                continue;
+            }
+            if (f_mount(&SDC_FS, "/", 1) != FR_OK) {
+                sdcDisconnect(&SDCD1);
+                sdcStop(&SDCD1);
+                continue;
+            }
+            printf("Successfully mounted SDCard (slowdown=%u)\n", (unsigned)sd_slowdown);
+
+            // Create APM Directory if needed
+            // AP::FS().mkdir("/APM");
+            sdcard_running = true;
+            return true;
+        }
+    #elif HAL_USE_MMC_SPI
+        if (sdcard_running) {
+            sdcard_stop();
+        }
+
         sdcard_running = true;
-        return true;
-    }
-#elif HAL_USE_MMC_SPI
-    if (sdcard_running) {
-        sdcard_stop();
-    }
 
-    sdcard_running = true;
+        device = AP_HAL::get_HAL().spi->get_device("sdcard");
+        if (!device) {
+            printf("No sdcard SPI device found\n");
+            sdcard_running = false;
+            return false;
+        }
+        device->set_slowdown(sd_slowdown);
 
-    device = AP_HAL::get_HAL().spi->get_device("sdcard");
-    if (!device) {
-        printf("No sdcard SPI device found\n");
+        mmcObjectInit(&MMCD1);
+
+        mmcconfig.spip =
+                static_cast<ChibiOS::SPIDevice*>(device.get())->get_driver();
+        mmcconfig.hscfg = &highspeed;
+        mmcconfig.lscfg = &lowspeed;
+
+        /*
+        try up to 3 times to init microSD interface
+        */
+        const uint8_t tries = 3;
+        for (uint8_t i=0; i<tries; i++) {
+            mmcStart(&MMCD1, &mmcconfig);
+
+            if (mmcConnect(&MMCD1) == HAL_FAILED) {
+                mmcStop(&MMCD1);
+                continue;
+            }
+            if (f_mount(&SDC_FS, "/", 1) != FR_OK) {
+                mmcDisconnect(&MMCD1);
+                mmcStop(&MMCD1);
+                continue;
+            }
+            printf("Successfully mounted SDCard (slowdown=%u)\n", (unsigned)sd_slowdown);
+
+            // Create APM Directory if needed
+            AP::FS().mkdir("/APM");
+            return true;
+        }
+    #endif
         sdcard_running = false;
-        return false;
-    }
-    device->set_slowdown(sd_slowdown);
-
-    mmcObjectInit(&MMCD1);
-
-    mmcconfig.spip =
-            static_cast<ChibiOS::SPIDevice*>(device.get())->get_driver();
-    mmcconfig.hscfg = &highspeed;
-    mmcconfig.lscfg = &lowspeed;
-
-    /*
-      try up to 3 times to init microSD interface
-     */
-    const uint8_t tries = 3;
-    for (uint8_t i=0; i<tries; i++) {
-        mmcStart(&MMCD1, &mmcconfig);
-
-        if (mmcConnect(&MMCD1) == HAL_FAILED) {
-            mmcStop(&MMCD1);
-            continue;
-        }
-        if (f_mount(&SDC_FS, "/", 1) != FR_OK) {
-            mmcDisconnect(&MMCD1);
-            mmcStop(&MMCD1);
-            continue;
-        }
-        printf("Successfully mounted SDCard (slowdown=%u)\n", (unsigned)sd_slowdown);
-
-        // Create APM Directory if needed
-        AP::FS().mkdir("/APM");
-        return true;
-    }
-#endif
-    sdcard_running = false;
-#endif
+    #endif
     return false;
 }
 
