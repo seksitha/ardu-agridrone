@@ -1098,6 +1098,7 @@ bool AP_AHRS_DCM::set_home(const Location &loc)
     Log_Write_Home_And_Origin();
 
     // send new home and ekf origin to GCS
+    gcs().send_text(MAV_SEVERITY_INFO,"set home @ahrs");
     gcs().send_message(MSG_HOME);
     gcs().send_message(MSG_ORIGIN);
 

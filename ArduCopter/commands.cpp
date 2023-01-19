@@ -72,8 +72,13 @@ bool Copter::set_home(const Location& loc, bool lock)
     const bool home_was_set = ahrs.home_is_set();
 
     // set ahrs home (used for RTL)
-    if (!ahrs.set_home(loc)) {
+    bool set_home_success = ahrs.set_home(loc);
+    if (!set_home_success) {
+        gcs().send_text(MAV_SEVERITY_INFO,"set home fail!!!");
         return false;
+    }
+    if(set_home_success){
+        gcs().send_text(MAV_SEVERITY_INFO,"set home success!!!");
     }
 
     // init inav and compass declination

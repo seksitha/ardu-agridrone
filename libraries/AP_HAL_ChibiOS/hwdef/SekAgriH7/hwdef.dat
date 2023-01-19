@@ -3,24 +3,18 @@
 MCU STM32H7xx STM32H743xx
 
 # board ID for firmware load
-APJ_BOARD_ID 1036
+APJ_BOARD_ID 1938
 
 # crystal frequency, setup to use external oscillator
 OSCILLATOR_HZ 8000000
 
 FLASH_SIZE_KB 2048
 
-# bootloader takes first sector
-FLASH_RESERVE_START_KB 128
-
 # with 2M flash we can afford to optimize for speed
 env OPTIMIZE -O2
 
 # ChibiOS system timer
 STM32_ST_USE_TIMER 2
-
-# bootloader takes first sector
-FLASH_RESERVE_START_KB 128
 
 # order of UARTs (and USB)
 SERIAL_ORDER OTG1 USART1 USART2 USART3 UART4 UART7 OTG2
@@ -218,7 +212,9 @@ define HAL_OS_FATFS_IO 1
 define HAL_BOARD_LOG_DIRECTORY "/APM/LOGS"
 define HAL_BOARD_TERRAIN_DIRECTORY "/APM/TERRAIN"
 
-define STORAGE_FLASH_PAGE 14
+# 128kb bootloader 256kb storage and reserve 128kb
+FLASH_RESERVE_START_KB 512
+define STORAGE_FLASH_PAGE 1
 define HAL_STORAGE_SIZE 16384
 # define HAL_WITH_RAMTRON 1
 

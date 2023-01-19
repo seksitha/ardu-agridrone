@@ -8,16 +8,19 @@ MCU STM32H7xx STM32H743xx
 OSCILLATOR_HZ 8000000
 
 # board ID for firmware load
-APJ_BOARD_ID 1036
+APJ_BOARD_ID 1938
 
 FLASH_SIZE_KB 2048
 
 # bootloader is installed at zero offset
 FLASH_RESERVE_START_KB 0
 
+# don't allow bootloader to use more than 16k
+FLASH_USE_MAX_KB 128
+
 # the location where the bootloader will put the firmware
-# the H743 has 128k sectors
-FLASH_BOOTLOADER_LOAD_KB 128
+# the H743 has 128k sectors; 128kb bootloader 256kb storage and reserve 128kb
+FLASH_BOOTLOADER_LOAD_KB 512
 
 # ChibiOS system timer
 STM32_ST_USE_TIMER 2
@@ -43,7 +46,6 @@ PA9  VBUS INPUT
 PA13 JTMS-SWDIO SWD
 PA14 JTCK-SWCLK SWD
 
-define HAL_USE_EMPTY_STORAGE 1
 define HAL_STORAGE_SIZE 16384
 
 define BOOTLOADER_DEBUG SD7
