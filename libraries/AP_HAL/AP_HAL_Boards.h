@@ -165,6 +165,12 @@
 #define HAL_WITH_UAVCAN 0
 #endif
 
+#ifndef HAL_MAX_CAN_PROTOCOL_DRIVERS
+#define HAL_MAX_CAN_PROTOCOL_DRIVERS HAL_WITH_UAVCAN
+#endif
+#ifndef HAL_NUM_CAN_IFACES
+#define HAL_NUM_CAN_IFACES 2
+#endif
 #ifndef HAL_RCINPUT_WITH_AP_RADIO
 #define HAL_RCINPUT_WITH_AP_RADIO 0
 #endif
@@ -176,6 +182,17 @@
 #ifndef HAL_HAVE_GETTIME_SETTIME
 #define HAL_HAVE_GETTIME_SETTIME 0
 #endif
+#ifndef HAL_GCS_ENABLED
+#define HAL_GCS_ENABLED 1
+#endif
+#ifndef HAL_CANMANAGER_ENABLED
+#define HAL_CANMANAGER_ENABLED 1
+#endif
+
+#ifndef HAL_CANFD_SUPPORTED
+#define HAL_CANFD_SUPPORTED 0
+#endif
+
 
 // this is used as a general mechanism to make a 'small' build by
 // dropping little used features. We use this to allow us to keep

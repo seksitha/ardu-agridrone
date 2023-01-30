@@ -22,6 +22,7 @@
 
 #if HAL_WITH_UAVCAN
 #include "CAN.h"
+#include "CANIface.h"
 #endif
 
 #include "utility/BetterStream.h"

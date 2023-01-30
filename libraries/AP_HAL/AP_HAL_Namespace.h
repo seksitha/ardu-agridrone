@@ -32,7 +32,11 @@ namespace AP_HAL {
     class CANProtocol;
     class CANManager;
     class CAN;
-
+    class CANIface;
+    class CANFrame;
+    class EventHandle;
+    class EventSource;
+    
     class Util;
     class Flash;
 
