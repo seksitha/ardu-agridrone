@@ -41,7 +41,7 @@ public:
 
 #ifdef HAL_BUILD_AP_PERIPH
     static void set_periph(const uint8_t i, const AP_CANManager::Driver_Type protocol, AP_HAL::CANIface* iface) {
-        if (i < HAL_NUM_CAN_IFACES) {
+        if (i < HAL_WITH_UAVCAN) {
             _periph[i].protocol = protocol;
             _periph[i].iface = iface;
         }
@@ -68,7 +68,7 @@ private:
     struct CANSensor_Periph {
         AP_HAL::CANIface* iface;
         AP_CANManager::Driver_Type protocol;
-    } static _periph[HAL_NUM_CAN_IFACES];
+    } static _periph[HAL_WITH_UAVCAN];
 #endif
 };
 

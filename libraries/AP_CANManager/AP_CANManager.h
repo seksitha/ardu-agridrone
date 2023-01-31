@@ -81,7 +81,7 @@ public:
     // return driver for index i
     AP_CANDriver* get_driver(uint8_t i) const
     {
-        if (i < HAL_NUM_CAN_IFACES) {
+        if (i < HAL_WITH_UAVCAN) {
             return _drivers[i];
         }
         return nullptr;
@@ -101,7 +101,7 @@ public:
     // return driver type index i
     Driver_Type get_driver_type(uint8_t i) const
     {
-        if (i < HAL_NUM_CAN_IFACES) {
+        if (i < HAL_WITH_UAVCAN) {
             return _driver_type_cache[i];
         }
         return Driver_Type_None;
@@ -156,7 +156,7 @@ private:
         AP_CANDriver* _piccolocan;
     };
 
-    CANIface_Params _interfaces[HAL_NUM_CAN_IFACES];
+    CANIface_Params _interfaces[HAL_WITH_UAVCAN];
     AP_CANDriver* _drivers[HAL_MAX_CAN_PROTOCOL_DRIVERS];
     CANDriver_Params _drv_param[HAL_MAX_CAN_PROTOCOL_DRIVERS];
     Driver_Type _driver_type_cache[HAL_MAX_CAN_PROTOCOL_DRIVERS];

@@ -168,8 +168,8 @@
 #ifndef HAL_MAX_CAN_PROTOCOL_DRIVERS
 #define HAL_MAX_CAN_PROTOCOL_DRIVERS HAL_WITH_UAVCAN
 #endif
-#ifndef HAL_NUM_CAN_IFACES
-#define HAL_NUM_CAN_IFACES 2
+#ifndef HAL_WITH_UAVCAN
+#define HAL_WITH_UAVCAN 2
 #endif
 #ifndef HAL_RCINPUT_WITH_AP_RADIO
 #define HAL_RCINPUT_WITH_AP_RADIO 0
@@ -252,4 +252,11 @@
 
 #ifndef USE_LIBC_REALLOC
 #define USE_LIBC_REALLOC 1
+#endif
+#ifndef __RAMFUNC__
+#define __RAMFUNC__
+#endif
+
+#ifndef __FASTRAMFUNC__
+#define __FASTRAMFUNC__
 #endif

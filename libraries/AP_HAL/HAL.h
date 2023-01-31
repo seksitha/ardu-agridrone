@@ -15,6 +15,7 @@ class AP_Param;
 #include "OpticalFlow.h"
 #if HAL_WITH_UAVCAN
 #include "CAN.h"
+#include "CANIface.h"
 #endif
 
 
@@ -41,9 +42,11 @@ public:
         AP_HAL::OpticalFlow *_opticalflow,
         AP_HAL::Flash *_flash,
 #if HAL_WITH_UAVCAN
-        AP_HAL::CANManager* _can_mgr[MAX_NUMBER_OF_CAN_DRIVERS])
+        AP_HAL::CANManager* _can_mgr[MAX_NUMBER_OF_CAN_DRIVERS],
+        AP_HAL::CANIface* _can_ifaces[MAX_NUMBER_OF_CAN_DRIVERS])
 #else
-        AP_HAL::CANManager** _can_mgr)
+        AP_HAL::CANManager** _can_mgr,
+        AP_HAL::CANIface** _can_ifaces)
 #endif
         :
         uartA(_uartA),
@@ -74,6 +77,13 @@ public:
         } else {
             for (uint8_t i = 0; i < MAX_NUMBER_OF_CAN_DRIVERS; i++)
                 can_mgr[i] = _can_mgr[i];
+        }
+        if (_can_ifaces == nullptr) {
+            for (uint8_t i = 0; i < MAX_NUMBER_OF_CAN_DRIVERS; i++)
+                canMan[i] = nullptr;
+        } else {
+            for (uint8_t i = 0; i < MAX_NUMBER_OF_CAN_DRIVERS; i++)
+                canMan[i] = _can_ifaces[0];
         }
 #endif
 
@@ -122,5 +132,10 @@ public:
     AP_HAL::CANManager* can_mgr[MAX_NUMBER_OF_CAN_DRIVERS];
 #else
     AP_HAL::CANManager** can_mgr;
+#endif
+#if HAL_WITH_UAVCAN
+    AP_HAL::CANIface* canMan[MAX_NUMBER_OF_CAN_DRIVERS];
+#else
+    AP_HAL::CANIface** canMan;
 #endif
 };

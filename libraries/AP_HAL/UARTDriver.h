@@ -47,7 +47,7 @@ public:
 
     // read from a locked port. If port is locked and key is not correct then 0 is returned
     virtual int16_t read_locked(uint32_t key) { return -1; }
-    
+    virtual uint32_t available_locked(uint32_t key) { return 0; }
     // control optional features
     virtual bool set_options(uint16_t options) { return options==0; }
     virtual uint8_t get_options(void) const { return 0; }

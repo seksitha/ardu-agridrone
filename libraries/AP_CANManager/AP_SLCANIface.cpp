@@ -281,7 +281,7 @@ bool SLCAN::CANIface::init_passthrough(uint8_t i)
         return false;
     }
 
-    _can_iface = hal.can[i];
+    _can_iface = hal.canMan[i];
     _iface_num = _slcan_can_port - 1;
     _prev_ser_port = -1;
 #if HAL_CANMANAGER_ENABLED

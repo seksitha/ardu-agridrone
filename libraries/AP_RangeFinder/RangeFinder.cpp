@@ -494,7 +494,7 @@ void RangeFinder::detect_instance(uint8_t instance, uint8_t& serial_instance)
         }
         break;
     case RangeFinder_TYPE_BenewakeCAN :
-        _add_backend(new AP_RangeFinder_Benewake_CAN(state[instance], params[instance]), instance);
+        _add_backend(new AP_RangeFinder_Benewake_CAN(state[instance], params[instance]));
         break;
     default:
         break;

@@ -67,7 +67,7 @@ private:
         uint32_t bad_rx_seq;
         uint16_t tx_seq;
         uint16_t next_valid_seq;
-    } _loopback_stats[HAL_NUM_CAN_IFACES];
+    } _loopback_stats[HAL_WITH_UAVCAN];
 
     void main_thread();
     bool test_loopback(uint32_t loop_rate);
@@ -93,7 +93,7 @@ private:
 
     bool _initialized;
     uint8_t _driver_index;
-    AP_HAL::CANIface* _can_ifaces[HAL_NUM_CAN_IFACES];
+    AP_HAL::CANIface* _can_ifaces[HAL_WITH_UAVCAN];
 
     // Classes required for UAVCAN Test
     class RaiiSynchronizer {};

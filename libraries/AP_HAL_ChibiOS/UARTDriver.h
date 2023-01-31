@@ -52,7 +52,7 @@ public:
 
     // lock a port for exclusive use. Use a key of 0 to unlock
     bool lock_port(uint32_t write_key, uint32_t read_key) override;
-
+    uint32_t available_locked(uint32_t key) override;
     // control optional features
     bool set_options(uint16_t options) override;
     uint8_t get_options(void) const override;

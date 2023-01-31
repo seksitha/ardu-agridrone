@@ -499,15 +499,6 @@ void Scheduler::_storage_thread(void* arg)
     }
 }
 
-void Scheduler::system_initialized()
-{
-    if (_initialized) {
-        AP_HAL::panic("PANIC: scheduler::system_initialized called"
-                      "more than once");
-    }
-    _initialized = true;
-}
-
 /*
   disable interrupts and return a context that can be used to
   restore the interrupt state. This can be used to protect

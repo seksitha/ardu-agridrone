@@ -20,7 +20,6 @@
 #include <AP_Vehicle/AP_Vehicle.h>
 
 #include <AP_UAVCAN/AP_UAVCAN.h>
-#include <AP_PiccoloCAN/AP_PiccoloCAN.h>
 #include "AP_CANTester.h"
 #include <AP_KDECAN/AP_KDECAN.h>
 
@@ -46,7 +45,7 @@ const AP_Param::GroupInfo AP_CANManager::CANDriver_Params::var_info[] = {
     AP_SUBGROUPPTR(_kdecan, "KDE_", 3, AP_CANManager::CANDriver_Params, AP_KDECAN),
 #endif
 
-#if HAL_NUM_CAN_IFACES > 1 && !HAL_MINIMIZE_FEATURES && HAL_ENABLE_CANTESTER
+#if HAL_WITH_UAVCAN > 1 && !HAL_MINIMIZE_FEATURES && HAL_ENABLE_CANTESTER
     // @Group: TST_
     // @Path: ../AP_CANManager/AP_CANTester.cpp
     AP_SUBGROUPPTR(_testcan, "TST_", 4, AP_CANManager::CANDriver_Params, CANTester),

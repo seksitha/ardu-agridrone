@@ -61,6 +61,9 @@
 #define HAL_Semaphore ChibiOS::Semaphore
 #define HAL_Semaphore_Recursive ChibiOS::Semaphore
 
+#include <AP_HAL/EventHandle.h>
+#define HAL_EventHandle AP_HAL::EventHandle
+
 /* string names for well known SPI devices */
 #define HAL_BARO_MS5611_NAME "ms5611"
 #ifndef HAL_BARO_MS5611_SPI_INT_NAME

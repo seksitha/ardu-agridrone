@@ -75,7 +75,10 @@ bool ByteBuffer::empty(void) const
 {
     return head == tail;
 }
-
+bool ByteBuffer::is_empty(void) const
+{
+    return head == tail;
+}
 uint32_t ByteBuffer::write(const uint8_t *data, uint32_t len)
 {
     ByteBuffer::IoVec vec[2];

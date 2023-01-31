@@ -51,11 +51,11 @@ void CANSensor::register_driver(AP_CANManager::Driver_Type dtype)
 
 
 #ifdef HAL_BUILD_AP_PERIPH
-CANSensor::CANSensor_Periph CANSensor::_periph[HAL_NUM_CAN_IFACES];
+CANSensor::CANSensor_Periph CANSensor::_periph[HAL_WITH_UAVCAN];
 
 void CANSensor::register_driver_periph(const AP_CANManager::Driver_Type dtype)
 {
-    for (uint8_t i = 0; i < HAL_NUM_CAN_IFACES; i++) {
+    for (uint8_t i = 0; i < HAL_WITH_UAVCAN; i++) {
         if (_periph[i].protocol != dtype) {
             continue;
         }

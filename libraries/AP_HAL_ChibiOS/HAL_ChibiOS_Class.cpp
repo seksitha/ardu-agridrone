@@ -96,7 +96,9 @@ static ChibiOS::Flash flashDriver;
 #else
 static Empty::Flash flashDriver;
 #endif
-
+#if HAL_WITH_UAVCAN > 0
+static ChibiOS::CANIface* canDrivers[HAL_WITH_UAVCAN];
+#endif
 
 #if HAL_WITH_IO_MCU
 HAL_UART_IO_DRIVER;
@@ -126,8 +128,14 @@ HAL_ChibiOS::HAL_ChibiOS() :
         &utilInstance,
         &opticalFlowDriver,
         &flashDriver,
-        nullptr
-        )
+        #if HAL_WITH_UAVCAN
+            nullptr, // why pass null of _can_mgr see HAL.h
+            (AP_HAL::CANIface**)canDrivers)
+        #else
+            nullptr,
+            nullptr)
+        #endif
+        
 {}
 
 static bool thread_running = false;        /**< Daemon status flag */

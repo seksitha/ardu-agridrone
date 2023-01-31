@@ -7,3 +7,10 @@
 ### Agrupilot c++ 
 
 -  function parameter with `&&` this will allow the fucntion bind to the param and set its value. ` mode_auto.mission.set_item(2, new_mission_waypoint_2 );`
+
+
+### TODO
+{ 0 }; search and repair this
+_can_ifaces[0]; fix this 0 index too.
+//AP_BoardConfig::config_error
+// ringbuffer.h xx.cpp

@@ -592,6 +592,27 @@ def enable_can(f):
     '''setup for a CAN enabled board'''
     f.write('#define HAL_WITH_UAVCAN 1\n')
     env_vars['HAL_WITH_UAVCAN'] = '1'
+    global mcu_series
+    if mcu_series.startswith("STM32H7") or mcu_series.startswith("STM32G4"):
+        prefix = "FDCAN"
+        cast = "CanType"
+    else:
+        prefix = "CAN"
+        cast = "bxcan::CanType"
+    # allow for optional CAN_ORDER option giving bus order
+    can_order_str = get_config('CAN_ORDER', required=False, aslist=True)
+    if can_order_str:
+        can_order = [int(s) for s in can_order_str]
+    else:
+        can_order = []
+        for i in range(1,3):
+            if 'CAN%u' % i in bytype or (i == 1 and 'CAN' in bytype):
+                can_order.append(i)
+    base_list = []
+    for i in can_order:
+        base_list.append("reinterpret_cast<%s*>(uintptr_t(%s%s_BASE))" % (cast, prefix, i))
+        f.write("#define HAL_CAN_IFACE%u_ENABLE\n" % i)
+    f.write('#define HAL_CAN_BASE_LIST %s\n' % ','.join(base_list))
 
 
 def has_sdcard_spi():

@@ -57,7 +57,7 @@ const AP_Param::GroupInfo CANTester::var_info[] = {
 
 bool CANTester::add_interface(AP_HAL::CANIface* can_iface)
 {
-    if (_num_ifaces >= HAL_NUM_CAN_IFACES) {
+    if (_num_ifaces >= HAL_WITH_UAVCAN) {
         debug_can(AP_CANManager::LOG_ERROR, "Max Number of CanIfaces exceeded");
         return false;
     }
