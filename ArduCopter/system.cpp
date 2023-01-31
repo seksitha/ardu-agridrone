@@ -61,7 +61,8 @@ void Copter::init_ardupilot()
     
     BoardConfig.init();
 #if HAL_WITH_UAVCAN
-    BoardConfig_CAN.init();
+    //BoardConfig_CAN.init();
+    canMan.init();
 #endif
 
     // init cargo gripper

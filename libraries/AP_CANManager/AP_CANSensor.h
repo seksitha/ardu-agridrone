@@ -20,7 +20,7 @@
 
 #include "AP_CANManager.h"
 
-#if HAL_MAX_CAN_PROTOCOL_DRIVERS
+#if HAL_WITH_UAVCAN
 
 class CANSensor : public AP_CANDriver {
 public:
@@ -72,5 +72,5 @@ private:
 #endif
 };
 
-#endif // HAL_MAX_CAN_PROTOCOL_DRIVERS
+#endif // HAL_WITH_UAVCAN
 

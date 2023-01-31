@@ -19,7 +19,7 @@
 
 #include "AP_SLCANIface.h"
 
-#if HAL_MAX_CAN_PROTOCOL_DRIVERS
+#if HAL_WITH_UAVCAN
 #include <AP_HAL/AP_HAL.h>
 #include <AP_Common/AP_Common.h>
 

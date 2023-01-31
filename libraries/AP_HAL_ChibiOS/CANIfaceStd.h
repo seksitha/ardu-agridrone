@@ -237,7 +237,7 @@ public:
     void pollErrorFlagsFromISR(void);
 
     // CAN Peripheral register structure
-    static constexpr bxcan::CanType* const Can[HAL_WITH_UAVCAN] = { 0 };
+    static constexpr bxcan::CanType* const Can[MAX_NUMBER_OF_CAN_INTERFACES] = { 0 };
 
 protected:
     bool add_to_rx_queue(const CanRxItem &rx_item) override {

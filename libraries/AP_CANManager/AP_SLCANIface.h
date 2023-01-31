@@ -19,7 +19,7 @@
 
 #include <AP_HAL/AP_HAL.h>
 
-#if HAL_MAX_CAN_PROTOCOL_DRIVERS
+#if HAL_WITH_UAVCAN
 #include "AP_HAL/utility/RingBuffer.h"
 #include <AP_Param/AP_Param.h>
 

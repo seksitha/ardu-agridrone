@@ -49,45 +49,45 @@ extern const AP_HAL::HAL& hal;
 // table of user settable parameters
 const AP_Param::GroupInfo AP_CANManager::var_info[] = {
 
-#if HAL_WITH_UAVCAN > 0
+#if MAX_NUMBER_OF_CAN_INTERFACES > 0
     // @Group: P1_
     // @Path: ../AP_CANManager/AP_CANIfaceParams.cpp
-    AP_SUBGROUPINFO(_interfaces[0], "P1_", 1, AP_CANManager, AP_CANManager::CANIface_Params),
+    AP_SUBGROUPINFO(_interfaces[0], "PM1_", 1, AP_CANManager, AP_CANManager::CANIface_Params),
 #endif
 
-#if HAL_WITH_UAVCAN > 1
+#if MAX_NUMBER_OF_CAN_INTERFACES > 1
     // @Group: P2_
     // @Path: ../AP_CANManager/AP_CANIfaceParams.cpp
-    AP_SUBGROUPINFO(_interfaces[1], "P2_", 2, AP_CANManager, AP_CANManager::CANIface_Params),
+    AP_SUBGROUPINFO(_interfaces[1], "PM2_", 2, AP_CANManager, AP_CANManager::CANIface_Params),
 #endif
 
-#if HAL_WITH_UAVCAN > 2
+#if MAX_NUMBER_OF_CAN_INTERFACES > 2
     // @Group: P3_
     // @Path: ../AP_CANManager/AP_CANIfaceParams.cpp
-    AP_SUBGROUPINFO(_interfaces[2], "P3_", 3, AP_CANManager, AP_CANManager::CANIface_Params),
+    AP_SUBGROUPINFO(_interfaces[2], "PM3_", 3, AP_CANManager, AP_CANManager::CANIface_Params),
 #endif
 
-#if HAL_MAX_CAN_PROTOCOL_DRIVERS > 0
+#if MAX_NUMBER_OF_CAN_INTERFACES > 0
     // @Group: D1_
     // @Path: ../AP_CANManager/AP_CANDriver.cpp
-    AP_SUBGROUPINFO(_drv_param[0], "D1_", 4, AP_CANManager, AP_CANManager::CANDriver_Params),
+    AP_SUBGROUPINFO(_drv_param[0], "DM1_", 4, AP_CANManager, AP_CANManager::CANDriver_Params),
 #endif
 
-#if HAL_MAX_CAN_PROTOCOL_DRIVERS > 1
+#if MAX_NUMBER_OF_CAN_INTERFACES > 1
     // @Group: D2_
     // @Path: ../AP_CANManager/AP_CANDriver.cpp
-    AP_SUBGROUPINFO(_drv_param[1], "D2_", 5, AP_CANManager, AP_CANManager::CANDriver_Params),
+    AP_SUBGROUPINFO(_drv_param[1], "DM2_", 5, AP_CANManager, AP_CANManager::CANDriver_Params),
 #endif
 
-#if HAL_MAX_CAN_PROTOCOL_DRIVERS > 2
+#if MAX_NUMBER_OF_CAN_INTERFACES > 2
     // @Group: D3_
     // @Path: ../AP_CANManager/AP_CANDriver.cpp
-    AP_SUBGROUPINFO(_drv_param[2], "D3_", 6, AP_CANManager, AP_CANManager::CANDriver_Params),
+    AP_SUBGROUPINFO(_drv_param[2], "DM3_", 6, AP_CANManager, AP_CANManager::CANDriver_Params),
 #endif
 
     // @Group: SLCAN_
     // @Path: ../AP_CANManager/AP_SLCANIface.cpp
-    AP_SUBGROUPINFO(_slcan_interface, "SLCAN_", 7, AP_CANManager, SLCAN::CANIface),
+    AP_SUBGROUPINFO(_slcan_interface, "SLCANM_", 7, AP_CANManager, SLCAN::CANIface),
 
     // @Param: LOGLEVEL
     // @DisplayName: Loglevel
@@ -135,13 +135,13 @@ void AP_CANManager::init()
     //Reset all SLCAN related params that needs resetting at boot
     _slcan_interface.reset_params();
 
-    Driver_Type drv_type[HAL_MAX_CAN_PROTOCOL_DRIVERS] = {};
+    Driver_Type drv_type[MAX_NUMBER_OF_CAN_INTERFACES] = {};
     // loop through interfaces and allocate and initialise Iface,
     // Also allocate Driver objects, and add interfaces to them
-    for (uint8_t i = 0; i < HAL_WITH_UAVCAN; i++) {
+    for (uint8_t i = 0; i < MAX_NUMBER_OF_CAN_INTERFACES; i++) {
         // Get associated Driver to the interface
         uint8_t drv_num = _interfaces[i]._driver_number;
-        if (drv_num == 0 || drv_num > HAL_MAX_CAN_PROTOCOL_DRIVERS) {
+        if (drv_num == 0 || drv_num > MAX_NUMBER_OF_CAN_INTERFACES) {
             continue;
         }
         drv_num--;
@@ -149,7 +149,7 @@ void AP_CANManager::init()
         if (hal.canMan[i] == nullptr) {
             // So if this interface is not allocated allocate it here,
             // also pass the index of the CANBus
-            const_cast <AP_HAL::HAL&> (hal).canMan[i] = new HAL_CANIface(i);
+            const_cast <AP_HAL::HAL&> (hal).canMan[i] = new HAL_CANIface(1);
         }
 
         // Initialise the interface we just allocated
@@ -185,7 +185,7 @@ void AP_CANManager::init()
             continue;
         }
 
-        if (_num_drivers >= HAL_MAX_CAN_PROTOCOL_DRIVERS) {
+        if (_num_drivers >= MAX_NUMBER_OF_CAN_INTERFACES) {
             // We are exceeding number of drivers,
             // this can't be happening time to panic
             //AP_BoardConfig::config_error("Max number of CAN Drivers exceeded\n\r");
@@ -225,7 +225,7 @@ void AP_CANManager::init()
             AP_Param::load_object_from_eeprom((AP_PiccoloCAN*)_drivers[drv_num], AP_PiccoloCAN::var_info);
 #endif
         } else if (drv_type[drv_num] == Driver_Type_CANTester) {
-#if HAL_WITH_UAVCAN > 1 && !HAL_MINIMIZE_FEATURES && HAL_ENABLE_CANTESTER
+#if MAX_NUMBER_OF_CAN_INTERFACES > 1 && !HAL_MINIMIZE_FEATURES && HAL_ENABLE_CANTESTER
             _drivers[drv_num] = _drv_param[drv_num]._testcan = new CANTester;
 
             if (_drivers[drv_num] == nullptr) {
@@ -246,13 +246,13 @@ void AP_CANManager::init()
 
     }
 
-    for (uint8_t drv_num = 0; drv_num < HAL_MAX_CAN_PROTOCOL_DRIVERS; drv_num++) {
+    for (uint8_t drv_num = 0; drv_num < MAX_NUMBER_OF_CAN_INTERFACES; drv_num++) {
         //initialise all the Drivers
         if (_drivers[drv_num] == nullptr) {
             continue;
         }
         bool enable_filter = false;
-        for (uint8_t i = 0; i < HAL_WITH_UAVCAN; i++) {
+        for (uint8_t i = 0; i < MAX_NUMBER_OF_CAN_INTERFACES; i++) {
             if (_interfaces[i]._driver_number == (drv_num+1) &&
                 hal.canMan[i] != nullptr &&
                 hal.canMan[i]->get_operating_mode() == AP_HAL::CANIface::FilteredMode) {
@@ -277,9 +277,9 @@ bool AP_CANManager::register_driver(Driver_Type dtype, AP_CANDriver *driver)
 {
     WITH_SEMAPHORE(_sem);
 
-    for (uint8_t i = 0; i < HAL_WITH_UAVCAN; i++) {
+    for (uint8_t i = 0; i < MAX_NUMBER_OF_CAN_INTERFACES; i++) {
         uint8_t drv_num = _interfaces[i]._driver_number;
-        if (drv_num == 0 || drv_num > HAL_MAX_CAN_PROTOCOL_DRIVERS) {
+        if (drv_num == 0 || drv_num > MAX_NUMBER_OF_CAN_INTERFACES) {
             continue;
         }
         // from 1 based to 0 based
@@ -291,14 +291,14 @@ bool AP_CANManager::register_driver(Driver_Type dtype, AP_CANDriver *driver)
         if (_drivers[drv_num] != nullptr) {
             continue;
         }
-        if (_num_drivers >= HAL_MAX_CAN_PROTOCOL_DRIVERS) {
+        if (_num_drivers >= MAX_NUMBER_OF_CAN_INTERFACES) {
             continue;
         }
 
         if (hal.canMan[i] == nullptr) {
             // if this interface is not allocated allocate it here,
             // also pass the index of the CANBus
-            const_cast <AP_HAL::HAL&> (hal).canMan[i] = new HAL_CANIface(i);
+            const_cast <AP_HAL::HAL&> (hal).canMan[i] = new HAL_CANIface(1);
         }
 
         // Initialise the interface we just allocated
@@ -390,7 +390,7 @@ bool AP_CANManager::handle_can_forward(mavlink_channel_t chan, const mavlink_com
         }
         return true;
     }
-    if (bus >= HAL_WITH_UAVCAN || hal.canMan[bus] == nullptr) {
+    if (bus >= MAX_NUMBER_OF_CAN_INTERFACES || hal.canMan[bus] == nullptr) {
         return false;
     }
     if (!hal.canMan[bus]->register_frame_callback(
@@ -403,7 +403,7 @@ bool AP_CANManager::handle_can_forward(mavlink_channel_t chan, const mavlink_com
     can_forward.component_id = msg.compid;
 
     // remove registration on other buses, allowing for bus change in the GUI tool
-    for (uint8_t i=0; i<HAL_WITH_UAVCAN; i++) {
+    for (uint8_t i=0; i<MAX_NUMBER_OF_CAN_INTERFACES; i++) {
         if (i != bus && hal.canMan[i] != nullptr) {
             hal.canMan[i]->register_frame_callback(nullptr);
         }
@@ -422,7 +422,7 @@ void AP_CANManager::handle_can_frame(const mavlink_message_t &msg) const
     case MAVLINK_MSG_ID_CAN_FRAME: {
         mavlink_can_frame_t p;
         mavlink_msg_can_frame_decode(&msg, &p);
-        if (p.bus >= HAL_WITH_UAVCAN || hal.canMan[p.bus] == nullptr) {
+        if (p.bus >= MAX_NUMBER_OF_CAN_INTERFACES || hal.canMan[p.bus] == nullptr) {
             return;
         }
         AP_HAL::CANFrame frame{p.id, p.data, p.len};
@@ -432,7 +432,7 @@ void AP_CANManager::handle_can_frame(const mavlink_message_t &msg) const
     case MAVLINK_MSG_ID_CANFD_FRAME: {
         mavlink_canfd_frame_t p;
         mavlink_msg_canfd_frame_decode(&msg, &p);
-        if (p.bus >= HAL_WITH_UAVCAN || hal.canMan[p.bus] == nullptr) {
+        if (p.bus >= MAX_NUMBER_OF_CAN_INTERFACES || hal.canMan[p.bus] == nullptr) {
             return;
         }
         AP_HAL::CANFrame frame{p.id, p.data, p.len, true};
@@ -450,7 +450,7 @@ void AP_CANManager::handle_can_filter_modify(const mavlink_message_t &msg)
     mavlink_can_filter_modify_t p;
     mavlink_msg_can_filter_modify_decode(&msg, &p);
     const int8_t bus = int8_t(p.bus)-1;
-    if (bus >= HAL_WITH_UAVCAN || hal.canMan[bus] == nullptr) {
+    if (bus >= MAX_NUMBER_OF_CAN_INTERFACES || hal.canMan[bus] == nullptr) {
         return;
     }
     if (p.num_ids > ARRAY_SIZE(p.ids)) {

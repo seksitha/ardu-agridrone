@@ -89,12 +89,12 @@ extern AP_HAL::HAL& hal;
 using namespace ChibiOS;
 
 constexpr bxcan::CanType* const CANIfaceStd::Can[];
-static ChibiOS::CANIfaceStd* can_ifaces[HAL_WITH_UAVCAN];
+static ChibiOS::CANIfaceStd* can_ifaces[MAX_NUMBER_OF_CAN_INTERFACES];
 
 uint8_t CANIfaceStd::next_interface;
 
 // mapping from logical interface to physical. First physical is 0, first logical is 0
-static constexpr uint8_t can_interfaces[HAL_WITH_UAVCAN] = { 0 };
+static constexpr uint8_t can_interfaces[MAX_NUMBER_OF_CAN_INTERFACES] = { 0 };
 
 // mapping from physical interface back to logical. First physical is 0, first logical is 0
 static constexpr int8_t can_iface_to_idx[3] = { 0 };
@@ -102,7 +102,7 @@ static constexpr int8_t can_iface_to_idx[3] = { 0 };
 static inline void handleTxInterrupt(uint8_t phys_index)
 {
     const int8_t iface_index = can_iface_to_idx[phys_index];
-    if (iface_index < 0 || iface_index >= HAL_WITH_UAVCAN) {
+    if (iface_index < 0 || iface_index >= MAX_NUMBER_OF_CAN_INTERFACES) {
         return;
     }
     uint64_t precise_time = AP_HAL::micros64();
@@ -117,7 +117,7 @@ static inline void handleTxInterrupt(uint8_t phys_index)
 static inline void handleRxInterrupt(uint8_t phys_index, uint8_t fifo_index)
 {
     const int8_t iface_index = can_iface_to_idx[phys_index];
-    if (iface_index < 0 || iface_index >= HAL_WITH_UAVCAN) {
+    if (iface_index < 0 || iface_index >= MAX_NUMBER_OF_CAN_INTERFACES) {
         return;
     }
     uint64_t precise_time = AP_HAL::micros64();
@@ -144,7 +144,7 @@ CANIfaceStd::CANIfaceStd(uint8_t index) :
     rx_bytebuffer_((uint8_t*)rx_buffer, sizeof(rx_buffer)),
     rx_queue_(&rx_bytebuffer_)
 {
-    if (index >= HAL_WITH_UAVCAN) {
+    if (index >= MAX_NUMBER_OF_CAN_INTERFACES) {
         AP_HAL::panic("Bad CANIfaceStd index.");
     } else {
         can_ = Can[index];
@@ -827,7 +827,7 @@ void CANIfaceStd::initOnce(bool enable_irq)
 bool CANIfaceStd::init(const uint32_t bitrate, const CANIfaceStd::OperatingMode mode)
 {
     Debug("Bitrate %lu mode %d", static_cast<unsigned long>(bitrate), static_cast<int>(mode));
-    if (self_index_ > HAL_WITH_UAVCAN) {
+    if (self_index_ > MAX_NUMBER_OF_CAN_INTERFACES) {
         Debug("CAN drv init failed");
         return false;
     }
@@ -935,7 +935,7 @@ bool CANIfaceStd::init(const uint32_t bitrate, const CANIfaceStd::OperatingMode 
         can_->FFA1R = 0;                           // All assigned to FIFO0 by default
         can_->FM1R = 0;                            // Indentifier Mask mode
 
-#if HAL_WITH_UAVCAN > 1
+#if MAX_NUMBER_OF_CAN_INTERFACES > 1
         can_->FS1R = 0x7ffffff;                    // Single 32-bit for all
         can_->FilterRegister[0].FR1 = 0;          // CAN1 accepts everything
         can_->FilterRegister[0].FR2 = 0;

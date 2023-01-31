@@ -17,7 +17,7 @@
  */
 #include <AP_HAL/AP_HAL.h>
 
-#if HAL_MAX_CAN_PROTOCOL_DRIVERS
+#if HAL_WITH_UAVCAN
 
 #include <AP_Scheduler/AP_Scheduler.h>
 #include "AP_CANSensor.h"
@@ -180,5 +180,5 @@ void CANSensor::loop()
     }
 }
 
-#endif // HAL_MAX_CAN_PROTOCOL_DRIVERS
+#endif // HAL_WITH_UAVCAN
 

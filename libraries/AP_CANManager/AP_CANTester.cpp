@@ -21,7 +21,7 @@
 
 #include "AP_CANManager.h"
 #include "AP_CANTester.h"
-#if HAL_MAX_CAN_PROTOCOL_DRIVERS > 1 && !HAL_MINIMIZE_FEATURES && HAL_CANMANAGER_ENABLED && HAL_ENABLE_CANTESTER
+#if HAL_WITH_UAVCAN > 1 && !HAL_MINIMIZE_FEATURES && HAL_CANMANAGER_ENABLED && HAL_ENABLE_CANTESTER
 #include <AP_SerialManager/AP_SerialManager.h>
 #include <stdio.h>
 #include <AP_Vehicle/AP_Vehicle.h>
@@ -717,4 +717,4 @@ CANTester *CANTester::get_cantester(uint8_t driver_index)
     }
     return static_cast<CANTester*>(AP::canMan().get_driver(driver_index));
 }
-#endif //#if HAL_MAX_CAN_PROTOCOL_DRIVERS > 1 && !HAL_MINIMIZE_FEATURES && HAL_MAX_CAN_PROTOCOL_DRIVERS
+#endif //#if HAL_WITH_UAVCAN > 1 && !HAL_MINIMIZE_FEATURES && HAL_WITH_UAVCAN
