@@ -152,3 +152,11 @@ void comm_send_unlock(mavlink_channel_t chan)
 {
     chan_locks[(uint8_t)chan].give();
 }
+/*
+  return reference to GCS channel lock, allowing for
+  HAVE_PAYLOAD_SPACE() to be run with a locked channel
+ */
+HAL_Semaphore &comm_chan_lock(mavlink_channel_t chan)
+{
+    return chan_locks[uint8_t(chan)];
+}

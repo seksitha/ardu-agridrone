@@ -54,21 +54,21 @@
 
 /* STM32F3's only CAN inteface does not have a number. */
 #if defined(STM32F3XX)
-#define RCC_APB1ENR_CAN1EN     RCC_APB1ENR_CANEN
-#define RCC_APB1RSTR_CAN1RST   RCC_APB1RSTR_CANRST
-#define CAN1_TX_IRQn           CAN_TX_IRQn
-#define CAN1_RX0_IRQn          CAN_RX0_IRQn
-#define CAN1_RX1_IRQn          CAN_RX1_IRQn
-#define CAN1_TX_IRQ_Handler      STM32_CAN1_TX_HANDLER
-#define CAN1_RX0_IRQ_Handler     STM32_CAN1_RX0_HANDLER
-#define CAN1_RX1_IRQ_Handler     STM32_CAN1_RX1_HANDLER
+// #define RCC_APB1ENR_CAN1EN     RCC_APB1ENR_CANEN
+// #define RCC_APB1RSTR_CAN1RST   RCC_APB1RSTR_CANRST
+// #define CAN1_TX_IRQn           CAN_TX_IRQn
+// #define CAN1_RX0_IRQn          CAN_RX0_IRQn
+// #define CAN1_RX1_IRQn          CAN_RX1_IRQn
+// #define CAN1_TX_IRQ_Handler      STM32_CAN1_TX_HANDLER
+// #define CAN1_RX0_IRQ_Handler     STM32_CAN1_RX0_HANDLER
+// #define CAN1_RX1_IRQ_Handler     STM32_CAN1_RX1_HANDLER
 #else
-#define CAN1_TX_IRQ_Handler      STM32_CAN1_TX_HANDLER
-#define CAN1_RX0_IRQ_Handler     STM32_CAN1_RX0_HANDLER
-#define CAN1_RX1_IRQ_Handler     STM32_CAN1_RX1_HANDLER
-#define CAN2_TX_IRQ_Handler      STM32_CAN2_TX_HANDLER
-#define CAN2_RX0_IRQ_Handler     STM32_CAN2_RX0_HANDLER
-#define CAN2_RX1_IRQ_Handler     STM32_CAN2_RX1_HANDLER
+// #define CAN1_TX_IRQ_Handler      STM32_CAN1_TX_HANDLER
+// #define CAN1_RX0_IRQ_Handler     STM32_CAN1_RX0_HANDLER
+// #define CAN1_RX1_IRQ_Handler     STM32_CAN1_RX1_HANDLER
+// #define CAN2_TX_IRQ_Handler      STM32_CAN2_TX_HANDLER
+// #define CAN2_RX0_IRQ_Handler     STM32_CAN2_RX0_HANDLER
+// #define CAN2_RX1_IRQ_Handler     STM32_CAN2_RX1_HANDLER
 #endif // #if defined(STM32F3XX)
 
 #if HAL_CANMANAGER_ENABLED

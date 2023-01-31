@@ -72,5 +72,5 @@ uint16_t comm_get_txspace(mavlink_channel_t chan);
 // lock and unlock a channel, for multi-threaded mavlink send
 void comm_send_lock(mavlink_channel_t chan);
 void comm_send_unlock(mavlink_channel_t chan);
-
+HAL_Semaphore &comm_chan_lock(mavlink_channel_t chan);
 #pragma GCC diagnostic pop

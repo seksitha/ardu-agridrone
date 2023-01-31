@@ -498,6 +498,8 @@ void Scheduler::_storage_thread(void* arg)
         hal.storage->_timer_tick();
     }
 }
+void Scheduler::system_initialized()
+{}
 
 /*
   disable interrupts and return a context that can be used to

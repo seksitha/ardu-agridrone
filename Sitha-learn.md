@@ -14,3 +14,4 @@
 _can_ifaces[0]; fix this 0 index too.
 //AP_BoardConfig::config_error
 // ringbuffer.h xx.cpp
+copy mavlink message def that i modify

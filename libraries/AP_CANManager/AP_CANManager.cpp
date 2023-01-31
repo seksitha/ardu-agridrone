@@ -188,17 +188,17 @@ void AP_CANManager::init()
         if (_num_drivers >= HAL_MAX_CAN_PROTOCOL_DRIVERS) {
             // We are exceeding number of drivers,
             // this can't be happening time to panic
-            AP_BoardConfig::config_error("Max number of CAN Drivers exceeded\n\r");
+            //AP_BoardConfig::config_error("Max number of CAN Drivers exceeded\n\r");
         }
 
         // Allocate the set type of Driver
         if (drv_type[drv_num] == Driver_Type_UAVCAN) {
-            _drivers[drv_num] = _drv_param[drv_num]._uavcan = new AP_UAVCAN;
+            // _drivers[drv_num] = _drv_param[drv_num]._uavcan = new AP_UAVCAN;
 
-            if (_drivers[drv_num] == nullptr) {
-                AP_BoardConfig::allocation_error("uavcan %d", i + 1);
-                continue;
-            }
+            // if (_drivers[drv_num] == nullptr) {
+            //     AP_BoardConfig::allocation_error("uavcan %d", i + 1);
+            //     continue;
+            // }
 
             AP_Param::load_object_from_eeprom((AP_UAVCAN*)_drivers[drv_num], AP_UAVCAN::var_info);
         } else if (drv_type[drv_num] == Driver_Type_KDECAN) {
@@ -298,7 +298,7 @@ bool AP_CANManager::register_driver(Driver_Type dtype, AP_CANDriver *driver)
         if (hal.canMan[i] == nullptr) {
             // if this interface is not allocated allocate it here,
             // also pass the index of the CANBus
-            const_cast <AP_HAL::HAL&> (hal).can[i] = new HAL_CANIface(i);
+            const_cast <AP_HAL::HAL&> (hal).canMan[i] = new HAL_CANIface(i);
         }
 
         // Initialise the interface we just allocated
