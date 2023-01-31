@@ -15,3 +15,6 @@ _can_ifaces[0]; fix this 0 index too.
 //AP_BoardConfig::config_error
 // ringbuffer.h xx.cpp
 copy mavlink message def that i modify
+#if HAL_MAX_CAN_PROTOCOL_DRIVERS
+    can_mgr.init(); // arducopter/system.cpp // 
+#endif

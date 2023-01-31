@@ -17,6 +17,7 @@
     "build-qoi":"./waf configure --board QioTekZealotH743 && ./waf -j20 copter",
     "build-qoif4":"./waf configure --board QioTekAdeptF407 && ./waf -j20 copter",
     "build-sek":"./waf configure --board SekAgriH7 && ./waf -j20 copter",
+    "build-sekext":"./waf configure --board SekAgriH7ext && ./waf -j20 copter",
     "build-v3":"./waf configure --board fmuv3 && ./waf -j20 copter"
   },
   "repository": {
