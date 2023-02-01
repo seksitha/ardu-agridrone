@@ -19,7 +19,7 @@
 
 #include <AP_HAL/AP_HAL.h>
 
-#if HAL_WITH_UAVCAN
+#if HAL_MAX_CAN_PROTOCOL_DRIVERS
 
 #include <AP_Param/AP_Param.h>
 #include "AP_SLCANIface.h"
@@ -75,13 +75,13 @@ public:
     // returns number of active CAN Drivers
     uint8_t get_num_drivers(void) const
     {
-        return HAL_WITH_UAVCAN;
+        return HAL_MAX_CAN_PROTOCOL_DRIVERS;
     }
 
     // return driver for index i
     AP_CANDriver* get_driver(uint8_t i) const
     {
-        if (i < HAL_WITH_UAVCAN) {
+        if (i < HAL_NUM_CAN_IFACES) {
             return _drivers[i];
         }
         return nullptr;
@@ -101,7 +101,7 @@ public:
     // return driver type index i
     Driver_Type get_driver_type(uint8_t i) const
     {
-        if (i < HAL_WITH_UAVCAN) {
+        if (i < HAL_NUM_CAN_IFACES) {
             return _driver_type_cache[i];
         }
         return Driver_Type_None;
@@ -156,10 +156,10 @@ private:
         AP_CANDriver* _piccolocan;
     };
 
-    CANIface_Params _interfaces[HAL_WITH_UAVCAN];
-    AP_CANDriver* _drivers[HAL_WITH_UAVCAN];
-    CANDriver_Params _drv_param[HAL_WITH_UAVCAN];
-    Driver_Type _driver_type_cache[HAL_WITH_UAVCAN];
+    CANIface_Params _interfaces[HAL_NUM_CAN_IFACES];
+    AP_CANDriver* _drivers[HAL_MAX_CAN_PROTOCOL_DRIVERS];
+    CANDriver_Params _drv_param[HAL_MAX_CAN_PROTOCOL_DRIVERS];
+    Driver_Type _driver_type_cache[HAL_MAX_CAN_PROTOCOL_DRIVERS];
 
     AP_Int8 _loglevel;
     uint8_t _num_drivers;
@@ -193,7 +193,7 @@ private:
 
 namespace AP
 {
-AP_CANManager& canMan();
+AP_CANManager& can();
 }
 
 #endif

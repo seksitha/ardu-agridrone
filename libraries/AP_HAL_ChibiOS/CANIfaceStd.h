@@ -42,10 +42,10 @@
 
 #include "AP_HAL_ChibiOS.h"
 # if defined(STM32H7XX) || defined(STM32G4)
-//  #include "CANFDIface.h"
+#include "CANFDIface.h"
 # else
-#if HAL_WITH_UAVCAN
-#include "bxcanstd.hpp"
+#if HAL_NUM_CAN_IFACES
+#include "bxcan.hpp"
 #include "EventSource.h"
 
 #ifndef HAL_CAN_RX_QUEUE_SIZE
@@ -58,7 +58,7 @@ static_assert(HAL_CAN_RX_QUEUE_SIZE <= 254, "Invalid CAN Rx queue size");
  * Single CAN iface.
  * The application shall not use this directly.
  */
-class ChibiOS::CANIfaceStd : public AP_HAL::CANIface
+class ChibiOS::CANIface : public AP_HAL::CANIface
 {
     static constexpr unsigned long IDE = (0x40000000U); // Identifier Extension
     static constexpr unsigned long STID_MASK = (0x1FFC0000U); // Standard Identifier Mask
@@ -161,8 +161,8 @@ public:
     /******************************************
      *   Common CAN methods                   *
      * ****************************************/
-    CANIfaceStd(uint8_t index);
-    CANIfaceStd();
+    CANIface(uint8_t index);
+    CANIface();
     static uint8_t next_interface;
 
     // Initialise CAN Peripheral
@@ -237,7 +237,7 @@ public:
     void pollErrorFlagsFromISR(void);
 
     // CAN Peripheral register structure
-    static constexpr bxcan::CanType* const Can[MAX_NUMBER_OF_CAN_INTERFACES] = { 0 };
+    static constexpr bxcan::CanType* const Can[HAL_NUM_CAN_IFACES] = { HAL_CAN_BASE_LIST };
 
 protected:
     bool add_to_rx_queue(const CanRxItem &rx_item) override {
@@ -248,5 +248,5 @@ protected:
         return self_index_;
     }
 };
-#endif //HAL_WITH_UAVCAN
+#endif //HAL_NUM_CAN_IFACES
 #endif //# if defined(STM32H7XX) || defined(STM32G4)

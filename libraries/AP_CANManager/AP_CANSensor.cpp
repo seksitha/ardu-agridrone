@@ -17,7 +17,7 @@
  */
 #include <AP_HAL/AP_HAL.h>
 
-#if HAL_WITH_UAVCAN
+#if HAL_MAX_CAN_PROTOCOL_DRIVERS
 
 #include <AP_Scheduler/AP_Scheduler.h>
 #include "AP_CANSensor.h"
@@ -25,7 +25,7 @@
 extern const AP_HAL::HAL& hal;
 
 #if HAL_CANMANAGER_ENABLED
-#define debug_can(level_debug, fmt, args...) do { AP::canMan().log_text(level_debug, _driver_name, fmt, ##args); } while (0)
+#define debug_can(level_debug, fmt, args...) do { AP::can().log_text(level_debug, _driver_name, fmt, ##args); } while (0)
 #else
 #define debug_can(level_debug, fmt, args...)
 #endif
@@ -39,7 +39,7 @@ CANSensor::CANSensor(const char *driver_name, uint16_t stack_size) :
 void CANSensor::register_driver(AP_CANManager::Driver_Type dtype)
 {
 #if HAL_CANMANAGER_ENABLED
-    if (!AP::canMan().register_driver(dtype, this)) {
+    if (!AP::can().register_driver(dtype, this)) {
         debug_can(AP_CANManager::LOG_ERROR, "Failed to register CANSensor %s", _driver_name);
     } else {
         debug_can(AP_CANManager::LOG_INFO, "%s: constructed", _driver_name);
@@ -51,11 +51,11 @@ void CANSensor::register_driver(AP_CANManager::Driver_Type dtype)
 
 
 #ifdef HAL_BUILD_AP_PERIPH
-CANSensor::CANSensor_Periph CANSensor::_periph[HAL_WITH_UAVCAN];
+CANSensor::CANSensor_Periph CANSensor::_periph[HAL_NUM_CAN_IFACES];
 
 void CANSensor::register_driver_periph(const AP_CANManager::Driver_Type dtype)
 {
-    for (uint8_t i = 0; i < HAL_WITH_UAVCAN; i++) {
+    for (uint8_t i = 0; i < HAL_NUM_CAN_IFACES; i++) {
         if (_periph[i].protocol != dtype) {
             continue;
         }
@@ -83,7 +83,7 @@ void CANSensor::init(uint8_t driver_index, bool enable_filters)
 
 #ifndef HAL_BUILD_AP_PERIPH
     // get CAN manager instance
-    _can_driver = AP::canMan().get_driver(driver_index);
+    _can_driver = AP::can().get_driver(driver_index);
 
     if (_can_driver == nullptr) {
         debug_can(AP_CANManager::LOG_ERROR, "no CAN driver");
@@ -180,5 +180,5 @@ void CANSensor::loop()
     }
 }
 
-#endif // HAL_WITH_UAVCAN
+#endif // HAL_MAX_CAN_PROTOCOL_DRIVERS
 
